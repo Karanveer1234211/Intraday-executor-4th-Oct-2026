@@ -1,0 +1,121 @@
+{
+  "family_id": "intraday_v1",
+  "stage": "intraday-study",
+  "declared": "2026-10-04",
+  "status": "Declared BEFORE any intraday data was loaded or examined. Second pipeline: reads the frozen research, the paper ledger and the caches; writes only to <root>\\research2\\intraday\\. Descriptive: it never changes a pick, the frozen engines or the paper test. Amended before any intraday data was examined (4 Oct 2026): 3-minute bars (15-minute derived from them), a broad entry/exit catalogue under a discovery -> confirmation -> forward protocol, and a register of earlier findings to re-test. Amended again before any intraday data was examined (5 Oct 2026, after a line-by-line review): coverage of D and the ensemble by rank group, VWAP_DAY benchmark-only, fill rules and holding semantics stated exactly, the 25 descriptors listed exactly, the entry gap reported, and a frozen candidate set. Amended before the study's first run (5 Oct 2026): the close is reconciled against the 15:00-15:30 VWAP - a diagnostic showed open/high/low/volume agree on ~99% of stock-days but the last-trade close failed 20.3% (median gap 0.215%) because NSE's official close is the last-30-minute VWAP. Amended before the study's first completed run (5 Oct 2026): TIME rules (a market order at minute k) fill at the last trade by minute k, or at the first trade after k when nothing has traded yet - thin stocks can have no trade in the first minutes.",
+  "question": "How do the trades the frozen engines already found behave inside each session, from the pick day T through the exit - where is the best ACHIEVABLE entry and exit, what does execution really cost, and when do the best and worst moments come?",
+  "trades": "every signal day with 15-minute data: frozen D's and the ensemble's walk-forward top 10 (ETFs removed); the traded set is the first 3 buyable, as in the paper rule; paper-test days are added as they settle; the candidate set is built ONCE from the frozen predictions and saved with its fingerprint and the exclusion list used (research2\\intraday\\frozen_candidates.parquet); later runs reuse it and refuse to rebuild without a stated reason",
+  "bars": "3-minute bars, IST, 09:15-15:30 (125 bars a session); 15-minute and coarser bars are derived from them. A stock-day enters the study only if its bars reconcile with the daily cache: first open, session high and low within 0.5% of the daily bar, and the 15:00-15:30 VWAP within 0.5% of the daily close (NSE's official close is the volume-weighted price of the last 30 minutes, not the last trade), and volume within 10%. Failing days are excluded and counted - a mismatch usually means a different split-adjustment basis. A pick enters only if its entry session (T+1) reconciles; an intraday exit on a session that does not reconcile is left out of that rule; both are counted.",
+  "entry_menu": {
+    "OPEN": "the 09:15 open of T+1 (the opening auction) - the BASELINE, what the research assumes",
+    "VWAP_15": "volume-weighted average price of 09:15-09:30 on T+1",
+    "VWAP_30": "VWAP of 09:15-09:45 on T+1",
+    "VWAP_60": "VWAP of 09:15-10:15 on T+1",
+    "VWAP_DAY": "VWAP of the whole T+1 session - a BENCHMARK ONLY: never in the catalogue protocol, never a forward lane",
+    "CLOSE_T1": "the close of T+1",
+    "LIMIT_PREV_VWAP": "a buy limit at T's session VWAP, resting all of T+1: filled at the limit if T+1 trades through it, or at the open if T+1 opens below it; otherwise NO trade (cash)",
+    "LIMIT_PREV_VPOC": "a buy limit at T's volume point of control (the typical price of T's busiest 15-minute bar), same fill rule",
+    "ORB_HIGH": "a buy stop at T+1's first-15-minute high: filled at that high when a later bar crosses it, or at the open of the first later bar that opens above it; otherwise no trade (cash). Catalogue variants use the first 6 and 30 minutes",
+    "ORACLE_LOW": "T+1's lowest price - HINDSIGHT, shown only as the unattainable ceiling"
+  },
+  "exit_menu": {
+    "CLOSE_5": "the close of the 5th session held - the BASELINE",
+    "OPEN_5": "the open of the 5th session",
+    "OPEN_6": "the open of the 6th session",
+    "VWAP_15_6": "VWAP of 09:15-09:30 of the 6th session",
+    "VWAP_DAY_5": "VWAP of the 5th session",
+    "CLOSE_3": "the close of the 3rd session",
+    "CLOSE_7": "the close of the 7th session",
+    "CLOSE_10": "the close of the 10th session",
+    "ORACLE_HIGH": "the highest price of sessions 1-5 - HINDSIGHT, the unattainable ceiling"
+  },
+  "honest_exits": "an exit whose price falls in a lower-circuit lock (the bar is frozen at the band) moves to the first later bar that trades off the band",
+  "measures": [
+    "per menu rule: mean and median net per trade (35 bp), the paired difference vs the baseline with a 95% block-bootstrap interval (blocks of 10 signal days), win rate, fill rate for limit and ORB entries and the outcome of filled vs unfilled days, slippage vs the open in bp, by year",
+    "the intraday path: sessions 1-5 split into overnight gap and session, the session by time bucket, and session 1's ENTRY GAP (T close to T+1 open) reported separately - it comes before the entry and is not earned by the trade",
+    "when the best and worst points of each session come (15-minute bucket), MFE and MAE by session",
+    "volume: how picks trade vs their own 20-day profile, where volume concentrates, VPOC and VWAP behaviour",
+    "lower-circuit approaches inside sessions: how often a pick comes within 2% of the band, how often it then locks, recovers, and what follows",
+    "every measure for the traded top 3 and for ranks 4-10 separately, for D and for the ensemble"
+  ],
+  "descriptors": "exactly these 25 per stock-day (intraday_features.DESCRIPTORS): gap, ret_15, ret_30, range_15, open_vol_share_15, session_ret, close_vs_vwap, vwap_crossings, close_location, afternoon_ret, slope, rel_volume_20, vol_accel, last_hour_share, close_vs_vpoc, mfe_open, mae_open, minute_of_high, minute_of_low, recovery_from_low, reversals_15, vs_nifty, near_lower_band, near_upper_band, frozen_bars. 'vs_nifty' is the session return minus NIFTY 50's session return (needs NIFTY 50 3-minute bars in the store; blank otherwise).",
+  "rules": [
+    "DESCRIPTIVE ONLY: every interval is reported, none decides anything",
+    "the menus above are fixed: no rule, threshold, time or level may be added, removed or tuned after seeing results",
+    "ORACLE rows are hindsight and are never a rule",
+    "any rule that looks better becomes a NEW declared family with its own forward test; nothing here changes the frozen engines or the paper test"
+  ],
+  "config": {
+    "interval": "3minute",
+    "session_start": "09:15",
+    "session_end": "15:30",
+    "bars_per_session": 125,
+    "reconcile_price_tol": 0.005,
+    "reconcile_volume_tol": 0.1,
+    "top": 10,
+    "traded": 3,
+    "hold": 5,
+    "cost_bps": 35.0,
+    "circuit_near": 0.02,
+    "boot_block": 10,
+    "boot_B": 10000,
+    "seed": 7,
+    "interval_level": 0.95,
+    "bar_minutes": 3,
+    "discovery_end": "2024-12-31",
+    "confirmation_start": "2025-01-01",
+    "fdr_q": 0.1,
+    "close_reference": "vwap_1500_1530"
+  },
+  "catalogue_protocol": {
+    "what": "beyond the core menus above, a broad catalogue of entry and exit rules (times, VWAP and VPOC levels, opening-range rules, fixed pullback limits, gap-conditional rules and their interactions) is listed IN FULL in intraday_study.py before the study first runs; nothing may be added after results are seen",
+    "discovery": "signal days 2021-10-01 to 2024-12-31: each rule's paired difference vs the baseline (open entry / 5th-close exit) per signal day; Benjamini-Hochberg false-discovery control at q = 0.10 across the whole catalogue",
+    "confirmation": "signal days 2025-01-01 to the latest settled day, held out and used ONCE: a discovery survivor confirms only if its paired mean has the same sign and its 95% block-bootstrap lower bound is above zero",
+    "forward": "confirmed rules run as shadow lanes in the second pipeline (their own ledger, alongside D) and are judged at 6 months; only then may one become a new engine variant",
+    "discard": "a rule that fails discovery or confirmation is discarded for this family and never re-tuned"
+  },
+  "findings_register": {
+    "purpose": "every earlier finding gets a pre-set confirmation test on data it has never seen (the intraday window, the confirmation window, and the paper test as it accrues); status: pending / confirmed / failed",
+    "findings": [
+      {
+        "id": "F1",
+        "finding": "overnight persistence: a stock's recent overnight gaps predict its next gap (stage C, IC +0.135)",
+        "test": "for the picks, the rank correlation of the 20-session overnight sum with the next overnight gap stays positive in the confirmation window and the paper test"
+      },
+      {
+        "id": "F2",
+        "finding": "tug of war: picks earn overnight and lose inside sessions from session 3 (path study)",
+        "test": "3-minute decomposition of sessions 1-5 shows positive mean gaps and negative mean sessions in the confirmation window; reports WHERE in the session the drag happens"
+      },
+      {
+        "id": "F3",
+        "finding": "reversal x spread: the only stage C feature whose favoured fifth cleared costs (+5.7 bp net)",
+        "test": "with spreads and slippage measured from 3-minute bars instead of 35 bp, the favoured fifth's net stays above zero"
+      },
+      {
+        "id": "F4",
+        "finding": "return x volume shock (Campbell-Grossman-Wang): high-volume moves reverse less (stage C IC -0.030)",
+        "test": "picks whose entry-day move came on rising intraday volume differ in 5-session net from those on falling volume, with the stage C sign"
+      },
+      {
+        "id": "F5",
+        "finding": "locked exits cost about 40.7 bp a trade",
+        "test": "how often a later lock was visible intraday before it locked (a band approach), and what selling at that moment would have cost or saved - descriptive"
+      },
+      {
+        "id": "F6",
+        "finding": "stops and targets all lost to the plain exit (daily bars)",
+        "test": "with 3-minute ordering instead of the conservative same-session rule, the declared brackets still lose to the plain exit"
+      },
+      {
+        "id": "F7",
+        "finding": "the execution cost model (impact + one tick) and the 35 bp convention",
+        "test": "measured opening slippage and spread proxies from 3-minute bars vs the model, by price band and liquidity"
+      }
+    ]
+  },
+  "not_in_this_family": "Large drawdown cuts are a portfolio question: volatility targeting, market-regime exposure, the number of positions and a NIFTY futures hedge against the portfolio's market exposure. They go in a separate declared 'risk overlay' family, tested in the execution simulator.",
+  "entry_semantics": "SAME CALENDAR EXIT: an entry rule changes only the price and time of entry within T+1; the exit stays on the original schedule (the 5th close counted from T+1). A later entry therefore holds slightly less time - CLOSE_T1 buys at T+1's close and holds four sessions. Fill-dependent entries that do not fill hold cash (their contribution is 0).",
+  "exit_semantics": "Sessions count from T+1 = session 1. OPEN_5 sells at the 5th session's open (four sessions held), OPEN_6 at the 6th's, VWAP_15_6 over the 6th session's first 15 minutes, VWAP_DAY_5 over the whole 5th session (an executable VWAP order), CLOSE_k at the k-th close. Exits on a session frozen at the lower circuit move to the first later unlocked open.",
+  "coverage": "Core menus, the session path (F2) and the descriptors are reported for D and for the ensemble, each for the traded top 3 and for ranks 4-10 (not traded). The catalogue protocol runs on each engine's traded top 3 with its own Benjamini-Hochberg control; only D's confirmed rules may become forward lanes (D is the primary arm); the ensemble's are reported."
+}
