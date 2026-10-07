@@ -1,0 +1,77 @@
+{
+  "family_id": "confirm_v1",
+  "stage": "confirmation-entry",
+  "declared": "2026-10-06",
+  "status": "Declared BEFORE this family's first run. Second pipeline; descriptive until a forward lane. Honest caveat: the same history was already used by intraday_v1 (whose unconditional delayed entries all lost), so the forward shadow lane is the real judge.",
+  "question": "Can buying only after the first minutes CONFIRM the move reduce downside pain on frozen D's trades without giving away a statistically meaningful amount of return?",
+  "trades": "the traded top 3 of frozen D (primary) and of the ensemble (reported), from intraday_v1's frozen candidate set; entry sessions must reconcile (intraday_v1 rule)",
+  "rule_form": "At checkpoint minute k (3, 6, 15, 30 after 09:15): if the signal is TRUE using only bars up to minute k (and the pick day's bars for warm-up and levels), buy at the last trade by minute k (or the first trade after k if none yet); otherwise SKIP (cash). WAIT form: buy at the first 3-minute checkpoint up to minute 30 where the signal is true; otherwise skip. Exit unchanged: the 5th close (honest circuit exits). 35 bp.",
+  "signals": {
+    "HOLD_OPEN": "price >= the 09:15 open",
+    "BREAK_FIRST_HIGH": "price > the first 3-minute bar's high",
+    "HIGHER_LOW": "no trade below the first bar's low since it (needs 2+ bars)",
+    "UPPER_HALF": "price in the upper half of the range so far",
+    "ABOVE_VWAP": "price > running VWAP",
+    "ABOVE_PREV_VWAP": "price > the pick day's VWAP",
+    "ABOVE_PREV_VPOC": "price > the pick day's VPOC",
+    "GAP_HELD": "price > the pick day's close",
+    "RSI_ABOVE_50": "RSI(14) on 3-minute closes (pick day + today so far) > 50",
+    "RSI_NOT_HOT": "RSI(14) <= 70",
+    "MACD_UP": "MACD(12,26) above its 9-signal on the same 3-minute closes",
+    "EARLY_VOLUME": "volume so far >= 2 x (k / 375) x the 20-session average daily volume (daily cache)",
+    "BUY_PRESSURE": "more than half of the volume so far on up-bars (close > open)",
+    "NIFTY_UP": "NIFTY 50 at or above its own open",
+    "BEAT_NIFTY": "the stock's return since the open > NIFTY 50's",
+    "HOLD_OPEN&BUY_PRESSURE": "both",
+    "HOLD_OPEN&NIFTY_UP": "both",
+    "HOLD_OPEN&ABOVE_VWAP": "both",
+    "GAP2_CONFIRM": "if the gap is at least +2%: buy at minute k only if HOLD_OPEN, else skip; if the gap is smaller: buy at the open"
+  },
+  "rules": "every signal at k = 3, 6, 15, 30 plus its WAIT form: 19 x 5 = 95 rules, listed in full by confirmation_study.RULES",
+  "metrics_per_rule": {
+    "strategy_delta": "per signal day, mean over the day's trades of (rule net if confirmed, else 0) minus the open-entry net - the return test",
+    "confirmed_delta": "per day, mean over confirmed trades of rule net minus their own open-entry net (did waiting improve the trades taken)",
+    "skipped_delta": "per day, mean over skipped trades of minus their open-entry net (what skipping saved (+) or cost (-))",
+    "mae_delta": "per day, mean over confirmed trades of (MAE from the rule's entry) minus (MAE from the open); MAE = deepest low through the exit vs the entry price; positive = shallower",
+    "worst10_delta": "10th-percentile net of the trades the rule takes minus the 10th-percentile open-entry net of all trades",
+    "retention": "share of trades confirmed"
+  },
+  "judging": {
+    "return_winner": "strategy_delta: discovery survivor under Benjamini-Hochberg (q 0.10, across the 95 rules) AND confirmation window same sign with 95% lower bound > 0",
+    "pain_winner": "ALL of: mae_delta a discovery survivor under its own Benjamini-Hochberg (q 0.10) and confirmation 95% lower bound > 0; worst10_delta 95% lower bound > 0 in both windows; strategy_delta NOT significantly negative in either window (95% upper bound >= 0); retention >= 50% in both windows",
+    "guardrail": "lower drawdown alone never qualifies; skipping trades never counts as pain reduction (MAE is measured on trades taken)",
+    "lanes": "only D's winners become forward shadow lanes; the ensemble's are reported"
+  },
+  "windows": {
+    "discovery": "signal days to 2024-12-31",
+    "confirmation": "2025-01-01 on, used once"
+  },
+  "config": {
+    "checkpoints": [
+      3,
+      6,
+      15,
+      30
+    ],
+    "wait_until": 30,
+    "cost_bps": 35.0,
+    "hold": 5,
+    "traded": 3,
+    "fdr_q": 0.1,
+    "retention_min": 0.5,
+    "early_volume_pace": 2.0,
+    "rsi_n": 14,
+    "macd": [
+      12,
+      26,
+      9
+    ],
+    "gap_confirm": 0.02,
+    "boot_block": 10,
+    "boot_B": 10000,
+    "boot_B_quantile": 1000,
+    "seed": 7,
+    "discovery_end": "2024-12-31",
+    "confirmation_start": "2025-01-01"
+  }
+}
