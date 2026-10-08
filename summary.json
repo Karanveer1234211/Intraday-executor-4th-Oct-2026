@@ -1,0 +1,38 @@
+{
+  "tool": "soul_intraday_study v1.1",
+  "declaration": "1c2ada8d487d68b3",
+  "candidates": "90f221ed218476e8",
+  "coverage": {
+    "stock_days": 2788582,
+    "stock_days_with_bars": 1405149,
+    "traded_picks": 9930,
+    "D_picks": 4965,
+    "picks_with_bars_T": 6957,
+    "picks_with_bars_S1": 6942,
+    "pool": 26735,
+    "cross_memory_ok": 9888,
+    "own_memory_median_n": 20.0,
+    "own_intraday_median_n": 20.0,
+    "universe_stocks": 1283,
+    "stocks_per_day_median": 1156.0,
+    "stocks_per_day_min": 956,
+    "bar_stocks_per_day_median": 1159.0,
+    "bar_coverage": 0.9397343074324098,
+    "first_bar_day": "2021-10-01",
+    "no_state_row": 0,
+    "no_next_session": 0,
+    "incomplete": 0,
+    "plain_exit_fallback": 0,
+    "intraday_files": 1264,
+    "intraday_days": 1466691,
+    "intraday_days_reconciled": 1405149
+  },
+  "shadow_candidates": [
+    "T3ATR|O6",
+    "SH",
+    "OH",
+    "OPEN_6",
+    "CLOSE_7",
+    "CLOSE_10"
+  ]
+}
