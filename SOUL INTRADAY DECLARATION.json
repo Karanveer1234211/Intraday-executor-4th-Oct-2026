@@ -1,0 +1,62 @@
+{
+  "family_id": "soul_intraday_v1",
+  "stage": "exploration",
+  "declared": "2026-10-08",
+  "status": "Exploration mode (two-speed research, agreed 7 Oct 2026): broad and fast, every number with its interval, no false-discovery gate. PROMISING rules become forward shadow-lane candidates; real money only after forward confirmation. Second pipeline: reads intraday_v1's frozen candidate set, the daily cache and <root>\\intraday_3m\\; writes only <root>\\research2\\soul_intraday\\. Amended before any real-data run (8 Oct 2026, after an independent review): (1) HORIZON EMBARGO - a future-perturbation test showed that a similar moment 6-9 sessions before a pick contributed its 7th/10th close, which lies after the pick; each horizon now counts a moment only if its exit was known on the pick day; (2) the run refuses thin 3-minute coverage; (3) the percentile universe and the memories' timing are stated in the report; (4) sections are labelled EXPLORATORY / PROMISING.",
+  "picks": "frozen D's traded top 3 (primary) and the ensemble's (reported), from research2\\intraday\\frozen_candidates.parquet (fingerprint checked); all walk-forward signal days with a complete 5-session outcome",
+  "state": {
+    "daily": "10 dimensions, same-day percentiles across the picked stocks: momentum 5/20/60 sessions, 20-session volatility, volatility ratio (5 vs 60 sessions), drawdown from the 60-session closing high, distance from the 20-session average, volume ratio (5 vs 60), 20-session overnight-gap sum, RSI(14)",
+    "transitions": "5-session change of the momentum-20, volatility-ratio and volume-ratio percentiles",
+    "pick_day": "10 dimensions of day T, same-day percentiles: from the daily bar - gap, session return, close location, volume vs its 20-session median; from 3-minute bars (reconciled days only) - close vs VWAP, last-hour volume share, afternoon return (from 13:15), first-30-minute return, minute of the low, minute of the high",
+    "labels": {
+      "daily_regime": "20-session momentum tercile (DOWN/FLAT/UP) x 20-session volatility tercile (CALM/NORMAL/WILD)",
+      "intraday_regime": "gap (GAPDOWN below -0.5%, GAPUP above +0.5%, else FLAT) x close location (WEAK below 1/3, STRONG above 2/3, else MID)",
+      "shape": "3-minute bars: low before 11:15 (EARLY_LOW) or after (LATE_LOW) x close location",
+      "transition": "daily regime 5 sessions earlier > daily regime today",
+      "seq3": "close-location letters (W/M/S) of T-2, T-1, T"
+    },
+    "quality": "stability = share of next sessions with the same daily regime; separation = mean outcome by state in each window and the rank agreement of state means between windows",
+    "universe": "percentiles rank each day across the stocks of the frozen candidate set (every stock frozen D or the ensemble had in its top 10, 2020-2026) that have a value that day; the 3-minute dimensions across those with reconciled bars that day. Not point-in-time (the set is defined by later picks); it sets only the percentile scale, identically for every pick. The run reports stocks per day. Stocks outside the candidate set (and NIFTY 50) never enter."
+  },
+  "memory": {
+    "cross": "the 50 nearest earlier pick-moments (frozen D and ensemble top 10, all stocks) on the full state (23 dimensions; missing dimensions skipped, distance rescaled; at least half of the query's dimensions shared)",
+    "own_daily": "the stock's own 20 nearest earlier days on the daily state (13 dimensions), history from 2016",
+    "own_intraday": "the stock's own 20 nearest earlier days that have 3-minute bars, on the full state; summarises what its NEXT session did intraday",
+    "no_look_ahead": "a moment counts only if it lies 6+ sessions before the pick (its 5-session outcome, MFE and next-session behaviour were complete); HORIZON EMBARGO: its exit at horizon k (3rd/5th/7th/10th close, 6th open) counts only if moment position + k <= the pick's position",
+    "variants": "cross memory is also computed on the daily state alone (13) and the daily state plus the 4 daily-bar pick-day dimensions (17) - to measure what the 3-minute dimensions add",
+    "timing": "every memory is chosen on day T's completed state (its close and its 3-minute bars) and reports what FOLLOWED the similar moments - the next session(s) - never day T itself; own_intraday answers: when this stock had a state like T's before, what did it do the NEXT session"
+  },
+  "outcomes": "entry at T+1's open; MFE and MAE over 5 sessions; exits at the 3rd/5th/7th/10th close and the 6th open, honest circuit rules for traded picks (plain prices for memory moments); session 1 = T+1 from 3-minute bars: first-30-minute return, MAE and MFE from the open, minute of the low, low within 30 minutes",
+  "targets": {
+    "normal": "T2, T5, T10 (+2/+5/+10%) and T3ATR (3 x ATR(14) at T)",
+    "state": "SQ30/SQ50/SQ70 = 30th/50th/70th percentile of MFE among the 50 nearest cross moments (needs 20+); RQ50 / IQ50 = median MFE of earlier pick-moments in the same daily / intraday regime (needs 30+)",
+    "stock": "OQ30/OQ50/OQ70 = percentiles of the stock's own 20 nearest days' MFE; OQ50S = OQ50 pulled toward SQ50 with weight n / (n + 30)",
+    "mechanics": "sell at the target the first session the high reaches it (at the open when a later session opens above it); otherwise the fallback exit: the 5th close (C5) or the 6th open (O6). No stops. Targets below +0.5% are raised to +0.5%. Win rate = target hit within 5 sessions; profitable = net > 0."
+  },
+  "other_rules": "SH / OH: exit at the horizon (3rd/5th/7th/10th close, 6th open) with the best mean net among the cross / own memory; VETO_CROSS_NEG / VETO_OWN_NEG / VETO_BOTH_NEG: skip (cash) when the memory's mean 5-session net is negative; reference exits OPEN_6, CLOSE_3, CLOSE_7, CLOSE_10",
+  "judging": "per signal day, the mean over the day's traded picks of (rule net, 0 if skipped) minus the 5th-close net; 95% block-bootstrap intervals over days; windows: discovery to 2024-12-31, confirmation from 2025-01-01. PROMISING (shadow-lane candidate) = discovery lower bound > 0 AND confirmation mean > 0, for D; WATCH = whole-window lower bound > 0. The ensemble is reported.",
+  "accuracy": "Spearman correlation of memory predictions with what happened (5-session net, MFE, target reach, the session-1 dip, first-30-minute return), with day-block bootstrap intervals per window; 'does the intraday state help' = the paired difference in Spearman between the full and the daily-only memory on picks whose day T has 3-minute bars",
+  "config": {
+    "k_cross": 50,
+    "k_own": 20,
+    "min_cross": 20,
+    "min_regime": 30,
+    "shrink_k": 30,
+    "lag_sessions": 6,
+    "hold": 5,
+    "cost_bps": 35.0,
+    "target_floor": 0.005,
+    "state_start": "2016-01-01",
+    "early_low_minute": 120,
+    "gap_flat": 0.005,
+    "boot_B": 2000,
+    "boot_B_rank": 400,
+    "boot_block": 10,
+    "seed": 7,
+    "discovery_end": "2024-12-31",
+    "confirmation_start": "2025-01-01",
+    "min_bar_coverage": 0.5
+  },
+  "bars_guard": "the run refuses when under min_bar_coverage of the stock-days since the first 3-minute day have reconciled bars (e.g. only pick windows downloaded); --allow-partial-bars overrides and the coverage is printed in the report",
+  "report": "sections 1-7 are EXPLORATORY (descriptions, correlations, hit rates, rankings; no false-discovery control; nothing validated); section 8 lists PROMISING rules - shadow-lane candidates, still not validated"
+}
