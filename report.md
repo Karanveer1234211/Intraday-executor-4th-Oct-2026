@@ -1,208 +1,390 @@
-# BIGMOVE v1 - intraday breakout study
+# BIGMOVE v2 'LEVIATHAN' - LSAP's setups as declared families
 
-bigmove_study v1.1 | declaration 1d330078e15751b7 | 2026-10-11 14:36 | cash-intraday costs 4.49 bp a round trip at Rs 500,000 plus slippage (entry 5 bp, stop 5 bp, time 3 bp)
+bigmove2_study v1 | declaration 5f6f3515353f593a | 2026-10-11 18:52 | stocks: cash-intraday costs 4.49 bp a round trip at Rs 500,000 plus slippage (entry 5 bp, stop 5 bp, time / trail 3 bp); NIFTY: futures costs, 1 point a side
 
-Days: discovery 796, confirmation 392, after the closing auction 48 (3-minute data 2021-10-01 to 2026-10-09; books from 2021-10-18). Liquid stock-days with a 3-minute session: 99.3% of 438,100; usable after reconciliation and the 80% rule: 97.3%.
+Days: discovery 806, confirmation 392, after the closing auction 48 (3-minute data 2021-10-01 to 2026-10-09; books from 2021-10-01). Liquid stock-days with a 3-minute session: 99.3% of 438,100; usable after reconciliation and the 80% rule: 97.3%.
 
 Data checks (they look at the whole session: hygiene, not signal): of 1,072,795 stock sessions with bars, 30,838 (2.87%) failed reconciliation with the daily bar and 4,123 (0.38%) had no first bar or under 80% of bars; both are dropped. Unreadable 3-minute files: 0. Triggered trades without a valid exit price: 0 (they would otherwise vanish as 'no trade'; expected 0). If any of these is large, read the results with care.
 
-Usable share of liquid stock-days by month (universe_by_month.csv): lowest 54.2% (2026-10); months under 90%: 2025-02, 2026-08, 2026-09, 2026-10 - results in those months rest on a thinner universe.
+Index data: NIFTY 50: bars NIFTY 50_3m.parquet; 6 of 1242 sessions disagree with the daily index file (reported; the file is used) | NIFTY BANK: bars NIFTY BANK_3m.parquet; 6 of 1242 sessions disagree with the daily index file (reported; the file is used) | NIFTY IT: bars NIFTY IT_3m.parquet; 9 of 1242 sessions disagree with the daily index file (reported; the file is used)
 
-Candidates dropped from every book for lack of a memory score (a stock's first months after listing, declared): 1-bar range 1,458 of 127,489 (1.14%); 2-bar range 1,505 of 127,399 (1.18%).
+Sectors: no sector files (the sector gate is NOT RUN). Breadth and participation from 983 liquid stocks.
 
-## Verdicts (discovery selects; confirmation used once)
+## H6 first: is a late-day expansion more likely after a midday coil?
 
-Daily return of the book in bp of its capital per day, [95% block-bootstrap interval]; Sharpe annualised; DSR = deflated Sharpe over 84 trials; FDR = passes Benjamini-Hochberg q 0.1 within its side. 'Excess' = minus PLAIN with the same capital in use (every candidate, min(count, N)/N of the book), paired by day: a ranked cell must beat it to be PROMISING or CHAMPION. 'p (search)' judges that excess against the search: how often the BEST of the side's 36 ranked cells shows as much excess when no ranking has any (max-t); a ranked cell also needs it below 0.025.
+An EXPANSION day: late range (13:15-15:15) above 1.5x the instrument's own 60-session median; a COIL day: the 11:00-13:00 box in its own lowest 20%. Volatility clustering predicts a NEGATIVE difference (calm middays stay calm); LSAP claims a positive one. Stocks: the daily difference of the two shares, pooled; NIFTY: one instrument.
 
-| side | pick | score | range bars | top N | stop | discovery bp/day | Sharpe | DSR | FDR | x1.5 slip | excess | p (search) | confirmation bp/day | Sharpe | x1.5 slip | excess | after CAS bp/day | verdict |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| L | best | rvxmfe | 1 | 10 | a50 | -12.3 [-19.1, -5.6] | -1.85 | +0.00 | no | -15.7 | -0.1 [-4.5, +4.3] | 0.987 | -12.4 [-19.7, -4.8] | -2.17 | -15.7 | -1.2 | -26.7 | **DEAD** |
-| L | best rv | rv | 1 | 10 | range | -13.4 [-18.9, -8.4] | -2.50 | +0.00 | no | -16.9 | -2.6 [-6.5, +1.0] | 1.000 | -11.4 [-18.6, -4.0] | -2.33 | -14.7 | -0.9 | -13.0 | **DEAD** |
-| L | median rv | rv | 2 | 10 | a50 | -16.2 [-21.2, -11.3] | -3.58 | +0.00 | no | -19.5 | -2.7 [-6.3, +1.0] | 1.000 | -11.7 [-18.6, -4.7] | -2.61 | -14.9 | -0.1 | +0.7 | **(reported)** |
-| L | best mfe | mfe | 1 | 10 | a50 | -16.8 [-23.8, -9.7] | -2.38 | +0.00 | no | -20.3 | -4.6 [-9.5, +0.3] | 1.000 | -18.7 [-27.6, -9.2] | -3.01 | -22.0 | -7.5 | -25.4 | **DEAD** |
-| L | median mfe | mfe | 2 | 20 | range | -14.0 [-18.6, -9.3] | -2.95 | +0.00 | no | -17.3 | -2.1 [-4.4, +0.2] | 1.000 | -14.9 [-21.2, -8.8] | -3.15 | -18.1 | -3.6 | -5.0 | **(reported)** |
-| L | best rvxmfe | rvxmfe | 1 | 10 | a50 | -12.3 [-19.1, -5.6] | -1.85 | +0.00 | no | -15.7 | -0.1 [-4.5, +4.3] | 0.987 | -12.4 [-19.7, -4.8] | -2.17 | -15.7 | -1.2 | -26.7 | **DEAD** |
-| L | median rvxmfe | rvxmfe | 2 | 10 | a50 | -17.7 [-23.2, -12.2] | -3.11 | +0.00 | no | -20.9 | -4.2 [-8.0, -0.6] | 1.000 | -13.7 [-21.0, -6.6] | -2.56 | -16.9 | -2.1 | -13.3 | **(reported)** |
-| L | best plain | plain | 1 | all | range | -10.8 [-14.3, -7.5] | -3.11 | +0.00 | no | -14.4 | (is plain) | - | -7.8 [-14.1, +0.4] | -1.57 | -11.3 | (is plain) | -16.7 | **DEAD** |
-| L | median plain | plain | 2 | all | a50 | -13.5 [-17.0, -10.2] | -4.00 | +0.00 | no | -16.9 | (is plain) | - | -11.4 [-15.6, -6.9] | -3.38 | -14.7 | (is plain) | -11.2 | **(reported)** |
-| S | best | rv | 1 | 10 | a50 | +2.7 [-2.6, +7.9] | +0.53 | +0.00 | no | -0.9 | +4.3 [+0.9, +7.6] | 0.090 | -2.4 [-8.8, +4.1] | -0.58 | -5.8 | +3.8 | -6.7 | **WATCH** |
-| S | best rv | rv | 1 | 10 | a50 | +2.7 [-2.6, +7.9] | +0.53 | +0.00 | no | -0.9 | +4.3 [+0.9, +7.6] | 0.090 | -2.4 [-8.8, +4.1] | -0.58 | -5.8 | +3.8 | -6.7 | **WATCH** |
-| S | median rv | rv | 1 | 20 | a50 | -0.3 [-4.4, +4.0] | -0.08 | +0.00 | no | -3.9 | +1.3 [-0.6, +3.1] | 0.592 | -5.4 [-11.0, +0.1] | -1.47 | -8.8 | +0.8 | -7.4 | **(reported)** |
-| S | best mfe | mfe | 2 | 10 | range | +0.7 [-6.4, +8.0] | +0.10 | +0.00 | no | -2.8 | +1.5 [-2.5, +5.5] | 0.872 | -1.1 [-8.9, +6.6] | -0.19 | -4.4 | +4.7 | -18.1 | **WATCH** |
-| S | median mfe | mfe | 1 | 20 | range | -1.2 [-6.6, +4.4] | -0.21 | +0.00 | no | -4.9 | +0.6 [-1.6, +2.7] | 0.925 | -5.7 [-12.1, +0.5] | -1.22 | -9.2 | +0.2 | -12.2 | **(reported)** |
-| S | best rvxmfe | rvxmfe | 1 | 10 | a50 | +1.6 [-4.0, +7.6] | +0.27 | +0.00 | no | -2.0 | +3.3 [+0.2, +6.1] | 0.203 | -1.2 [-9.1, +7.0] | -0.22 | -4.6 | +5.0 | -17.1 | **WATCH** |
-| S | median rvxmfe | rvxmfe | 1 | 20 | range | +0.4 [-4.9, +5.7] | +0.07 | +0.00 | no | -3.3 | +2.1 [+0.4, +4.0] | 0.164 | -2.6 [-9.3, +4.1] | -0.60 | -6.1 | +3.3 | -11.4 | **(reported)** |
-| S | best plain | plain | 2 | all | range | -0.8 [-5.4, +3.6] | -0.18 | +0.00 | no | -4.3 | (is plain) | - | -5.7 [-10.0, -1.6] | -1.69 | -9.1 | (is plain) | -9.2 | **DEAD** |
-| S | median plain | plain | 1 | all | range | -1.8 [-6.0, +2.5] | -0.42 | +0.00 | no | -5.5 | (is plain) | - | -5.9 [-10.8, -1.3] | -1.72 | -9.4 | (is plain) | -11.1 | **(reported)** |
+| instrument | window | days | coil days | P(exp given coil) | P(exp given no coil) | difference (pp) [95%] | holds |
+|---|---|---|---|---|---|---|---|
+| stocks (pooled) | disc | 759 | 47544 | 11.0% | 24.1% | -9.45 [-10.48, -8.46] | no |
+| stocks (pooled) | conf | 391 | 33501 | 10.7% | 22.7% | -9.46 [-11.17, -7.96] | no |
+| stocks (pooled) | post | 47 | 4352 | 11.6% | 22.9% | -9.80 [-13.30, -7.42] | no |
+| NIFTY 50 | disc | 760 | 164 | 6.1% | 22.8% | -16.72 [-21.81, -11.39] | no |
+| NIFTY 50 | conf | 391 | 81 | 4.9% | 21.9% | -17.00 [-26.02, -7.63] | no |
+| NIFTY 50 | post | 48 | 10 | 0.0% | 34.2% | -34.21 [-52.38, -15.15] | no |
 
-'best' = the highest discovery Sharpe among cells that meet the discovery half of their own rule (lower bound > 0; a ranked cell's excess too: lower bound > 0 and p (search) below 0.025); it is the cell the gates, exits, combined book and regimes use (L none met the discovery rule: highest Sharpe; S none met the discovery rule: highest Sharpe).
+## Verdicts (discovery selects one cell per family and side; confirmation used once)
 
-White's Reality Check (the best of the 42 F1 cells per side vs zero, discovery): L p = +1.000, S p = +0.452.
+Daily return of the book in bp of its capital per day [95% block-bootstrap interval]; Sharpe annualised; DSR = deflated Sharpe over 80 trials; p (search) = max-t p of the cell against the best of its family-side's cells (PROMISING and CHAMPION need it below 0.05, and at least 30 discovery trades); FDR = Benjamini-Hochberg q 0.1 over the side's 40 cells. Index books hold one NIFTY trade a day; stock books N slots, first come, first served.
 
-Fill audit of the selected cells (discovery): trades stopped inside their entry bar (booked at the worst order: entry, then the full stop) and trades with a missing bar between entry and exit (a hidden bar could hide a stop):
+| side | family | cell | N | discovery bp/day | Sharpe | trades | per trade bp | DSR | p (search) | FDR | x1.5 slip | confirmation bp/day | Sharpe | trades | x1.5 slip | after CAS | verdict |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| L | X1 trap and snap (NIFTY) | m5|PD|div1 | - | -0.1 [-0.8, +0.6] | -0.19 | 60 | -1.7 | +0.00 | 0.959 | no | -0.2 | -0.8 [-1.4, -0.2] | -1.92 | 22 | -0.8 | -0.2 | **DEAD** |
+| L | X2 kinetic slingshot (NIFTY) | avg|v2 | - | +0.0 [+0.0, +0.0] | +0.56 | 1 | +10.4 | +0.00 | 0.535 | no | +0.0 | +0.3 [+0.0, +1.0] | +0.80 | 1 | +0.3 | +0.0 | **WATCH** |
+| L | X3 late coil break (NIFTY) | c0.40|exp1 | - | -0.0 [-0.6, +0.6] | -0.02 | 72 | -0.1 | +0.00 | 0.741 | no | -0.1 | -0.8 [-1.5, -0.1] | -1.78 | 33 | -0.9 | -0.7 | **DEAD** |
+| L | S1 trap reversal (stocks) | m3|PD | 10 | -17.7 [-22.4, -12.9] | -3.78 | 7493 | -19.0 | +0.00 | 1.000 | no | -21.9 | -14.2 [-21.8, -6.6] | -2.90 | 3841 | -18.6 | -16.0 | **DEAD** |
+| L | S2 breakout retest (stocks) | level | 10 | -21.0 [-25.2, -16.8] | -5.17 | 7900 | -21.5 | +0.00 | 1.000 | no | -25.5 | -15.0 [-21.0, -8.8] | -3.54 | 3905 | -19.5 | -9.5 | **DEAD** |
+| L | S3 late coil break (stocks) | q10 | 10 | -6.1 [-7.8, -4.6] | -4.45 | 4605 | -10.7 | +0.00 | 1.000 | no | -8.6 | -6.2 [-8.4, -4.0] | -4.15 | 2644 | -9.0 | -11.9 | **DEAD** |
+| L | S4 exhaustion fade (stocks) | k3 | 20 | -0.1 [-0.1, -0.0] | -0.89 | 6 | -144.6 | +0.00 | 0.944 | no | -0.1 | +0.0 [+0.0, +0.0] | n/a | 0 | +0.0 | +0.0 | **DEAD** |
+| L | S5 relative-strength leader (stocks) | c24 | 10 | -16.0 [-22.4, -9.4] | -2.98 | 7900 | -16.4 | +0.00 | 1.000 | no | -20.0 | -15.9 [-22.8, -9.2] | -2.93 | 3910 | -20.0 | -7.0 | **DEAD** |
+| S | X1 trap and snap (NIFTY) | m5|PD|div1 | - | +0.2 [-0.8, +1.4] | +0.25 | 84 | +2.4 | +0.00 | 0.729 | no | +0.2 | -0.2 [-1.1, +0.9] | -0.23 | 35 | -0.2 | +1.0 | **WATCH** |
+| S | X2 kinetic slingshot (NIFTY) | ema9|v2 | - | +0.2 [-0.2, +0.6] | +0.46 | 7 | +19.2 | +0.00 | 0.443 | no | +0.2 | -0.2 [-0.6, +0.0] | -0.97 | 2 | -0.2 | +0.0 | **WATCH** |
+| S | X3 late coil break (NIFTY) | c0.40|exp1 | - | -0.3 [-0.9, +0.3] | -0.56 | 71 | -3.6 | +0.00 | 0.946 | no | -0.4 | -0.6 [-1.3, +0.2] | -1.04 | 47 | -0.6 | -0.2 | **DEAD** |
+| S | S1 trap reversal (stocks) | m3|PD | 10 | +0.4 [-4.4, +5.3] | +0.08 | 7728 | +0.4 | +0.00 | 0.685 | no | -3.8 | -7.6 [-14.6, -0.7] | -1.63 | 3860 | -12.0 | +0.6 | **WATCH** |
+| S | S2 breakout retest (stocks) | vwap | 10 | -6.9 [-11.3, -2.4] | -1.51 | 7896 | -7.0 | +0.00 | 1.000 | no | -11.3 | -10.7 [-15.5, -5.6] | -2.66 | 3910 | -15.2 | -9.2 | **DEAD** |
+| S | S3 late coil break (stocks) | q20 | 10 | -7.0 [-9.3, -4.4] | -3.75 | 6314 | -8.9 | +0.00 | 1.000 | no | -10.2 | -11.7 [-14.6, -8.7] | -6.50 | 3396 | -15.4 | -7.3 | **DEAD** |
+| S | S4 exhaustion fade (stocks) | k3 | 20 | -0.0 [-0.1, -0.0] | -1.09 | 5 | -85.5 | +0.00 | 0.978 | no | -0.0 | -0.0 [-0.1, +0.0] | -0.51 | 5 | -0.0 | -0.2 | **DEAD** |
+| S | S5 relative-strength leader (stocks) | c24 | 10 | -6.8 [-12.2, -1.8] | -1.20 | 7900 | -6.9 | +0.00 | 0.999 | no | -10.8 | -12.7 [-19.9, -5.0] | -2.54 | 3910 | -16.7 | -19.0 | **DEAD** |
 
-| side | pick | stopped in the entry bar | missing bar inside the trade |
+Best selected cell of each module (highest discovery Sharpe), judged against all the module's cells of that side (p module, max-t): L index: X2 avg|v2|N0 p 0.833 -> WATCH; L stock: S4 k3|N20 p 1.000 -> DEAD; S index: X2 ema9|v2|N0 p 0.845 -> WATCH; S stock: S1 m3|PD|N10 p 0.954 -> WATCH.
+
+White's Reality Check (best cell vs zero, discovery): G1 index L p = +0.833, G1 stock L p = +1.000, G1 index S p = +0.845, G1 stock S p = +0.954.
+
+Median cell of each family (reported, no verdict):
+
+| side | family | cell | N | discovery bp/day | confirmation bp/day |
+|---|---|---|---|---|---|
+| L | X1 | m5|IB|div0 | - | -1.6 [-2.9, -0.3] | -1.1 [-2.5, +0.5] |
+| L | X2 | ema9|v2 | - | -0.1 [-0.2, +0.1] | +0.0 [+0.0, +0.0] |
+| L | X3 | c0.30|exp0 | - | -0.4 [-0.9, +0.1] | -1.5 [-2.2, -0.9] |
+| L | S1 | m3|OR2 | 10 | -19.6 [-23.7, -15.5] | -15.7 [-21.8, -9.8] |
+| L | S2 | level | 20 | -19.4 [-23.1, -15.6] | -17.1 [-22.5, -11.6] |
+| L | S3 | q20 | 20 | -6.3 [-7.6, -4.8] | -6.1 [-8.2, -3.9] |
+| L | S4 | k2 | 20 | -0.1 [-0.3, -0.0] | -0.1 [-0.2, -0.0] |
+| L | S5 | c24 | 20 | -17.4 [-22.2, -12.1] | -14.7 [-21.1, -8.6] |
+| S | X1 | m3|IB|div1 | - | -0.7 [-1.4, +0.0] | -0.4 [-1.2, +0.4] |
+| S | X2 | ema9|v1.5 | - | -0.2 [-0.7, +0.5] | -0.3 [-0.8, +0.1] |
+| S | X3 | c0.30|exp1 | - | -0.4 [-0.8, +0.0] | -0.1 [-0.7, +0.4] |
+| S | S1 | m5|PD | 20 | -1.1 [-5.1, +3.0] | -8.5 [-13.9, -3.0] |
+| S | S2 | level | 20 | -6.4 [-10.5, -2.5] | -10.7 [-15.3, -5.7] |
+| S | S3 | q10 | 10 | -5.6 [-7.4, -3.5] | -9.0 [-11.6, -6.3] |
+| S | S4 | k2 | 20 | -0.1 [-0.2, -0.0] | -0.0 [-0.2, +0.2] |
+| S | S5 | c24 | 20 | -7.6 [-12.2, -3.1] | -12.5 [-19.7, -5.5] |
+
+Fill audit of the selected cells (discovery): stops inside the entry bar (the entry is the open, so these are real), missing bars inside a trade (a hidden bar could hide a stop):
+
+| side | family | stopped in entry bar | missing bar inside |
 |---|---|---|---|
-| L | best | 1.2% | 0.10% |
-| L | best rv | 1.8% | 0.05% |
-| L | best mfe | 0.7% | 0.11% |
-| L | best rvxmfe | 1.2% | 0.10% |
-| L | best plain | 2.1% | 0.06% |
-| S | best | 2.1% | 0.20% |
-| S | best rv | 2.1% | 0.20% |
-| S | best mfe | 0.7% | 0.14% |
-| S | best rvxmfe | 1.2% | 0.18% |
-| S | best plain | 0.6% | 0.14% |
+| L | X1 | 3.3% | 0.00% |
+| L | X2 | 0.0% | 0.00% |
+| L | X3 | 0.0% | 0.00% |
+| L | S1 | 2.4% | 0.17% |
+| L | S2 | 0.7% | 0.04% |
+| L | S3 | 0.2% | 0.02% |
+| L | S4 | 0.0% | 0.00% |
+| L | S5 | 0.0% | 0.14% |
+| S | X1 | 6.0% | 1.19% |
+| S | X2 | 0.0% | 0.00% |
+| S | X3 | 0.0% | 0.00% |
+| S | S1 | 3.1% | 0.13% |
+| S | S2 | 0.8% | 0.06% |
+| S | S3 | 0.2% | 0.00% |
+| S | S4 | 0.0% | 0.00% |
+| S | S5 | 0.0% | 0.08% |
 
-Is the memory more than volatility? Each memory pick minus the ATR control with the same range, N and stop, paired by day (reported; not a verdict rule):
+## H2: does the N-slot book beat the average trigger of its own rule? (stock families)
 
-| side | pick | discovery | confirmation | after CAS |
-|---|---|---|---|---|
-| L | best | +3.5 [-1.1, +8.1] | +5.9 [-1.2, +12.8] | -0.6 |
-| L | best mfe | -0.9 [-4.2, +2.3] | -0.4 [-4.7, +4.0] | +0.7 |
-| L | best rvxmfe | +3.5 [-1.1, +8.1] | +5.9 [-1.2, +12.8] | -0.6 |
-| S | best mfe | -0.0 [-2.4, +2.4] | +1.4 [-2.5, +5.4] | -1.1 |
-| S | best rvxmfe | +1.3 [-2.5, +5.3] | +0.7 [-6.7, +7.9] | +8.3 |
+Excess = the book minus every trigger of the same rule that day with the same capital in use (min(count, N)/N of the book), paired by day. Per-trade net of ALL triggers by participation at the trigger (descriptive).
 
-Combined book (half the capital in each side's selected cell: L rvxmfe|1|10|a50, S rv|1|10|a50; reported, no verdict): discovery -4.8 [-8.3, -1.0] bp/day, Sharpe -1.36, drawdown -41.91%; confirmation -7.4 [-11.7, -3.0], Sharpe -2.38; after CAS -16.7.
-
-Days on which a side had fewer than N candidates (part of an N-slot book sits in cash; the excess benchmark holds the same cash, so this is not counted as skill):
-
-| side | range bars | top N | discovery | confirmation | after CAS |
-|---|---|---|---|---|---|
-| L | 1 | 10 | 9 of 796 | 3 of 392 | 2 of 48 |
-| L | 1 | 20 | 54 of 796 | 10 of 392 | 3 of 48 |
-| S | 1 | 10 | 8 of 796 | 2 of 392 | 2 of 48 |
-| S | 1 | 20 | 39 of 796 | 11 of 392 | 5 of 48 |
-| L | 2 | 10 | 9 of 796 | 2 of 392 | 2 of 48 |
-| L | 2 | 20 | 42 of 796 | 9 of 392 | 3 of 48 |
-| S | 2 | 10 | 6 of 796 | 4 of 392 | 2 of 48 |
-| S | 2 | 20 | 42 of 796 | 15 of 392 | 4 of 48 |
-
-## RV x MFE: does the memory add to opening volume (and the reverse)?
-
-Paired daily difference in bp of book capital, pooled over the 12 (range, N, stop) combinations.
-
-| side | RVxMFE minus | discovery | confirmation | after CAS | adds |
-|---|---|---|---|---|---|
-| L | rv | -0.3 [-2.4, +1.9] | -0.4 [-3.7, +2.7] | -6.1 | no |
-| L | mfe | +0.4 [-1.8, +2.4] | +3.1 [-0.0, +6.2] | -0.0 | no |
-| S | rv | +0.0 [-1.8, +1.8] | +1.7 [-1.1, +4.6] | -5.9 | no |
-| S | mfe | +1.0 [-0.9, +2.8] | -0.5 [-3.4, +2.5] | +2.6 | no |
-
-## Direction gates (F2) and path management (F3), on each side's selected cell
-
-'adds' = paired discovery lower bound > 0 and paired confirmation mean > 0; a gate can only add to a cell that makes money in discovery (on a losing cell, trading less always looks better). A gate that cannot judge a stock-day (no NIFTY bars, no sector or liquid peer, no beta) lets it through; 'judged' is the share of the cell's discovery picks it could judge. A variant of a ranked cell must also beat the same variant on the matched PLAIN book ('excess'), and its base cell's ranking must survive the search (the base's p (search) above).
-
-| side | variant | judged | discovery bp/day | vs base (paired) | excess | confirmation bp/day | vs base | FDR | verdict | adds |
-|---|---|---|---|---|---|---|---|---|---|---|
-| L | g_nifty | 100% | -10.2 [-15.0, -5.5] | +2.1 [-1.9, +6.1] | -0.7 [-4.0, +2.7] | -9.5 [-15.6, -3.7] | +2.9 [-1.5, +7.3] | no | DEAD | no |
-| L | g_sector | 0% | -12.3 [-19.1, -5.6] | +0.0 [+0.0, +0.0] | -0.1 [-4.5, +4.3] | -12.4 [-19.7, -4.8] | +0.0 [+0.0, +0.0] | no | NOT RUN (no data for this gate) | no |
-| L | g_rs | 100% | -12.6 [-19.2, -6.0] | -0.3 [-0.6, +0.1] | -0.2 [-4.5, +4.3] | -12.9 [-20.3, -5.4] | -0.6 [-1.3, +0.1] | no | DEAD | no |
-| L | g_nifty_rs | 100% | -10.2 [-14.8, -5.6] | +2.1 [-1.9, +6.2] | -0.5 [-3.7, +2.8] | -10.1 [-16.1, -4.4] | +2.3 [-2.2, +6.8] | no | DEAD | no |
-| L | x_vwap | - | -3.1 [-7.2, +0.8] | +9.2 [+4.8, +13.5] | +1.2 [-1.5, +3.8] | -5.4 [-10.8, -0.2] | +7.0 [+1.5, +12.6] | YES | DEAD | YES |
-| L | x_be | - | -10.6 [-17.0, -4.4] | +1.7 [+0.2, +3.1] | +0.9 [-3.2, +5.1] | -12.0 [-19.7, -4.8] | +0.4 [-1.6, +2.4] | YES | DEAD | YES |
-| S | g_nifty | 100% | -1.0 [-5.4, +3.5] | -3.7 [-6.2, -1.2] | +1.8 [-0.9, +4.4] | -2.7 [-8.0, +2.5] | -0.3 [-4.4, +3.6] | no | DEAD | no |
-| S | g_sector | 0% | +2.7 [-2.6, +7.9] | +0.0 [+0.0, +0.0] | +4.3 [+0.9, +7.6] | -2.4 [-8.8, +4.1] | +0.0 [+0.0, +0.0] | no | NOT RUN (no data for this gate) | no |
-| S | g_rs | 100% | +2.9 [-2.5, +8.2] | +0.2 [-0.1, +0.7] | +4.4 [+1.0, +7.6] | -1.3 [-7.6, +5.2] | +1.1 [+0.1, +2.4] | no | WATCH | no |
-| S | g_nifty_rs | 100% | -0.9 [-5.4, +3.6] | -3.6 [-6.0, -1.1] | +1.8 [-0.9, +4.3] | -2.9 [-8.1, +2.2] | -0.5 [-4.8, +3.6] | no | DEAD | no |
-| S | x_vwap | - | -1.6 [-5.7, +2.5] | -4.3 [-7.3, -1.2] | +4.7 [+1.9, +7.3] | -3.4 [-8.2, +1.5] | -1.0 [-5.1, +3.4] | no | DEAD | no |
-| S | x_be | - | +3.0 [-2.1, +8.3] | +0.4 [-0.5, +1.3] | +5.2 [+1.7, +8.4] | -2.6 [-8.5, +3.2] | -0.2 [-2.0, +1.5] | no | WATCH | no |
-
-White's Reality Check on the best improvement over the base cell, within each family and side: F2 L p = +0.249, F3 L p = +0.000, F2 S p = +0.249, F3 S p = +0.358. FDR here is on the paired improvement.
-
-## NIFTY noise-boundary sleeve (F4, futures costs, spot index as stand-in)
-
-| cell | discovery bp/day | Sharpe | trades | per trade bp | FDR | confirmation bp/day | Sharpe | after CAS | verdict |
-|---|---|---|---|---|---|---|---|---|---|
-| time|all | +0.2 [-2.5, +3.0] | +0.06 | 418 | +0.3 | no | -4.5 [-8.3, -1.1] | -1.91 | -3.1 | (reported) |
-| time|nr47 | +0.5 [-0.9, +1.9] | +0.43 | 105 | +4.1 | no | -1.0 [-3.3, +1.1] | -0.70 | -0.9 | WATCH |
-| time|highvol | -0.4 [-2.7, +2.1] | -0.17 | 200 | -1.4 | no | -3.4 [-6.9, -0.5] | -1.70 | +0.4 | (reported) |
-| trail|all | -0.5 [-2.4, +1.6] | -0.24 | 418 | -1.0 | no | -3.2 [-5.5, -1.0] | -1.99 | -2.9 | (reported) |
-| trail|nr47 | +0.3 [-0.6, +1.4] | +0.34 | 105 | +2.6 | no | -0.7 [-2.1, +0.8] | -0.71 | -0.6 | (reported) |
-| trail|highvol | -0.5 [-2.1, +1.3] | -0.29 | 200 | -1.9 | no | -2.0 [-4.0, -0.2] | -1.46 | +0.1 | (reported) |
-
-White's Reality Check over the 6 sleeve cells: p = +0.472.
-
-## Controls (never selected): is the ranking worth anything?
-
-A random ranking must show no excess over the matched PLAIN book (if it does, the benchmark is broken); ATR alone asks whether the memory is more than volatility.
-
-| side | control | range bars | top N | stop | discovery bp/day | excess | per trade bp | confirmation bp/day |
+| side | family | cell | discovery excess | confirmation excess | adds | disc net/trade: RVOL < 1 | 1-2 | >= 2 |
 |---|---|---|---|---|---|---|---|---|
-| L | random | 1 | 10 | range | -13.1 [-18.1, -8.2] | -2.3 [-5.3, +0.8] | -16.2 | -11.0 |
-| L | random | 1 | 10 | a25 | -14.4 [-18.3, -10.3] | -1.7 [-4.1, +0.9] | -17.8 | -11.5 |
-| L | random | 1 | 10 | a50 | -14.1 [-19.3, -8.8] | -1.9 [-5.1, +1.4] | -17.4 | -12.3 |
-| L | random | 1 | 20 | range | -12.0 [-15.8, -8.2] | -1.3 [-2.8, +0.2] | -15.1 | -10.7 |
-| L | random | 1 | 20 | a25 | -13.9 [-17.1, -10.7] | -1.4 [-2.9, +0.0] | -17.5 | -12.1 |
-| L | random | 1 | 20 | a50 | -13.2 [-17.4, -9.2] | -1.3 [-2.9, +0.2] | -16.7 | -12.1 |
-| L | atr | 1 | 10 | range | -15.6 [-22.3, -9.3] | -4.8 [-9.5, -0.3] | -19.7 | -16.3 |
-| L | atr | 1 | 10 | a25 | -13.5 [-18.8, -8.3] | -0.8 [-4.2, +2.7] | -17.1 | -16.8 |
-| L | atr | 1 | 10 | a50 | -15.8 [-22.6, -9.1] | -3.7 [-8.3, +0.8] | -20.0 | -18.2 |
-| L | atr | 1 | 20 | range | -13.5 [-18.5, -8.7] | -2.8 [-5.3, -0.4] | -17.2 | -14.1 |
-| L | atr | 1 | 20 | a25 | -14.3 [-18.2, -10.3] | -1.9 [-3.6, +0.1] | -18.2 | -13.3 |
-| L | atr | 1 | 20 | a50 | -15.0 [-20.1, -10.1] | -3.1 [-5.4, -0.7] | -19.1 | -15.2 |
-| S | random | 1 | 10 | range | -2.9 [-7.5, +1.8] | -1.1 [-3.7, +1.6] | -3.5 | -5.9 |
-| S | random | 1 | 10 | a25 | -5.6 [-9.6, -1.2] | -0.4 [-2.6, +1.8] | -6.7 | -6.5 |
-| S | random | 1 | 10 | a50 | -2.1 [-7.2, +3.2] | -0.4 [-3.2, +2.4] | -2.5 | -5.9 |
-| S | random | 1 | 20 | range | -2.2 [-6.3, +2.0] | -0.4 [-1.8, +1.0] | -2.7 | -6.1 |
-| S | random | 1 | 20 | a25 | -5.2 [-8.6, -1.5] | -0.0 [-1.2, +1.1] | -6.3 | -7.1 |
-| S | random | 1 | 20 | a50 | -1.8 [-6.1, +2.6] | -0.2 [-1.7, +1.4] | -2.2 | -6.1 |
-| S | atr | 1 | 10 | range | -1.1 [-7.9, +6.0] | +0.8 [-3.2, +4.6] | -1.3 | -2.4 |
-| S | atr | 1 | 10 | a25 | -4.2 [-9.9, +1.8] | +1.0 [-2.6, +4.4] | -5.0 | -3.5 |
-| S | atr | 1 | 10 | a50 | +0.3 [-6.9, +7.5] | +1.9 [-2.1, +6.0] | +0.3 | -1.9 |
-| S | atr | 1 | 20 | range | -1.3 [-6.7, +4.3] | +0.5 [-1.7, +2.7] | -1.6 | -4.7 |
-| S | atr | 1 | 20 | a25 | -4.6 [-9.0, +0.1] | +0.6 [-1.3, +2.4] | -5.5 | -4.1 |
-| S | atr | 1 | 20 | a50 | -0.6 [-6.1, +5.3] | +1.0 [-1.2, +3.3] | -0.7 | -4.5 |
-| L | random | 2 | 10 | range | -12.1 [-17.3, -6.8] | +0.2 [-3.0, +3.4] | -15.7 | -10.7 |
-| L | random | 2 | 10 | a25 | -12.5 [-16.3, -8.6] | +0.4 [-2.2, +3.0] | -16.2 | -11.2 |
-| L | random | 2 | 10 | a50 | -12.9 [-17.8, -8.0] | +0.6 [-2.5, +3.8] | -16.8 | -11.5 |
-| L | random | 2 | 20 | range | -12.4 [-16.3, -8.4] | -0.4 [-2.1, +1.2] | -16.2 | -12.4 |
-| L | random | 2 | 20 | a25 | -12.7 [-15.7, -9.7] | -0.1 [-1.7, +1.4] | -16.7 | -12.8 |
-| L | random | 2 | 20 | a50 | -13.2 [-17.1, -9.3] | -0.0 [-1.7, +1.7] | -17.3 | -13.1 |
-| L | atr | 2 | 10 | range | -18.6 [-25.1, -12.4] | -6.3 [-10.7, -2.0] | -24.8 | -19.8 |
-| L | atr | 2 | 10 | a25 | -15.2 [-20.2, -10.0] | -2.3 [-5.6, +1.1] | -20.2 | -16.5 |
-| L | atr | 2 | 10 | a50 | -19.8 [-26.6, -13.4] | -6.3 [-10.7, -1.8] | -26.4 | -20.0 |
-| L | atr | 2 | 20 | range | -14.4 [-19.1, -9.9] | -2.5 [-4.7, -0.3] | -19.3 | -15.6 |
-| L | atr | 2 | 20 | a25 | -14.1 [-17.6, -10.5] | -1.5 [-3.2, +0.3] | -18.9 | -13.8 |
-| L | atr | 2 | 20 | a50 | -15.4 [-20.1, -10.8] | -2.2 [-4.4, +0.1] | -20.6 | -15.7 |
-| S | random | 2 | 10 | range | -1.2 [-6.4, +3.8] | -0.4 [-2.9, +2.1] | -1.5 | -9.8 |
-| S | random | 2 | 10 | a25 | -4.4 [-8.4, -0.2] | +0.2 [-2.0, +2.3] | -5.5 | -9.4 |
-| S | random | 2 | 10 | a50 | -1.0 [-6.0, +4.0] | +0.0 [-2.4, +2.5] | -1.2 | -10.2 |
-| S | random | 2 | 20 | range | -1.7 [-6.1, +2.6] | -0.9 [-2.1, +0.4] | -2.1 | -5.9 |
-| S | random | 2 | 20 | a25 | -4.4 [-7.9, -0.7] | +0.1 [-1.0, +1.4] | -5.5 | -6.2 |
-| S | random | 2 | 20 | a50 | -1.2 [-5.6, +3.1] | -0.2 [-1.5, +1.1] | -1.6 | -6.1 |
-| S | atr | 2 | 10 | range | +0.7 [-6.2, +8.3] | +1.5 [-2.2, +5.6] | +0.9 | -2.5 |
-| S | atr | 2 | 10 | a25 | -3.2 [-9.0, +3.0] | +1.3 [-2.0, +5.0] | -4.0 | -4.4 |
-| S | atr | 2 | 10 | a50 | -0.1 [-7.1, +7.1] | +0.9 [-2.9, +4.8] | -0.1 | -3.8 |
-| S | atr | 2 | 20 | range | -0.8 [-6.4, +5.0] | -0.0 [-2.2, +2.1] | -1.0 | -6.1 |
-| S | atr | 2 | 20 | a25 | -5.3 [-9.7, -0.6] | -0.7 [-2.4, +0.9] | -6.6 | -6.3 |
-| S | atr | 2 | 20 | a50 | -0.9 [-6.5, +4.7] | +0.1 [-2.0, +2.1] | -1.1 | -7.3 |
+| L | S1 | m3|PD|N10 | -1.2 [-4.2, +1.8] | +0.4 [-4.9, +5.9] | no | -16.5 (31546) | -9.7 (10273) | -12.9 (4663) |
+| L | S2 | level|N10 | +1.3 [-1.8, +4.1] | +5.3 [+0.7, +10.1] | no | -17.8 (57100) | -14.9 (9530) | -9.8 (1899) |
+| L | S3 | q10|N10 | +0.7 [+0.2, +1.3] | +1.0 [-0.0, +2.0] | YES | -10.6 (3392) | -14.2 (1619) | -9.6 (1065) |
+| L | S4 | k3|N20 | +0.0 [+0.0, +0.0] | +0.0 [+0.0, +0.0] | no | -59.1 (1) | n/a (0) | -161.7 (5) |
+| L | S5 | c24|N10 | +1.8 [-2.9, +6.8] | +0.0 [-5.2, +5.4] | no | -17.0 (71399) | -17.6 (22303) | -14.5 (18001) |
+| S | S1 | m3|PD|N10 | +4.2 [+1.2, +7.1] | +0.5 [-4.4, +5.2] | YES | -5.8 (33750) | -2.4 (15700) | +0.6 (10868) |
+| S | S2 | vwap|N10 | +2.6 [-0.3, +5.6] | +3.4 [+0.2, +6.7] | no | -3.9 (89188) | -8.0 (11105) | -6.6 (2216) |
+| S | S3 | q20|N10 | +2.1 [+1.4, +2.9] | +2.3 [+1.0, +3.7] | YES | -9.1 (9171) | -8.6 (3400) | -7.0 (1727) |
+| S | S4 | k3|N20 | +0.0 [+0.0, +0.0] | +0.0 [+0.0, +0.0] | no | n/a (0) | n/a (0) | -85.5 (5) |
+| S | S5 | c24|N10 | -0.9 [-3.9, +1.9] | -1.4 [-6.2, +3.6] | no | -6.5 (97651) | -3.3 (21789) | -4.1 (10147) |
 
-## Regimes (bp/day between the declared dates; reported, never used for selection)
+## G2: gates on each selected cell (paired)
 
-| from | to | days | best L | best S | combined | NIFTY sleeve |
+'adds' = paired discovery lower bound > 0 and paired confirmation mean > 0, on a cell with a positive discovery mean. 'judged' = the share of the cell's discovery picks the gate could judge (the rest pass through).
+
+| side | family | gate | judged | discovery bp/day | vs cell (paired) | confirmation bp/day | vs cell | FDR | verdict | adds |
+|---|---|---|---|---|---|---|---|---|---|---|
+| L | X1 | state | 100% | -0.3 [-0.8, +0.2] | -0.2 [-0.8, +0.3] | -0.5 [-1.0, -0.1] | +0.3 [-0.2, +0.7] | no | DEAD | no |
+| L | X1 | isync2 | 100% | -0.0 [-0.3, +0.3] | +0.1 [-0.6, +0.7] | -0.1 [-0.4, +0.1] | +0.7 [+0.1, +1.3] | no | DEAD | no |
+| L | X1 | isync1 | 100% | -0.2 [-0.8, +0.5] | -0.0 [-0.3, +0.2] | -0.4 [-0.9, +0.1] | +0.3 [+0.0, +0.8] | no | DEAD | no |
+| L | X1 | breadth | 100% | -0.2 [-0.5, +0.1] | -0.1 [-0.7, +0.6] | -0.3 [-0.5, -0.1] | +0.5 [-0.1, +1.1] | no | DEAD | no |
+| L | X1 | participation | 100% | +0.0 [+0.0, +0.0] | +0.1 [-0.6, +0.8] | +0.0 [+0.0, +0.0] | +0.8 [+0.2, +1.4] | no | DEAD | no |
+| L | X2 | state | 100% | +0.0 [+0.0, +0.0] | -0.0 [-0.0, +0.0] | +0.0 [+0.0, +0.0] | -0.3 [-1.0, +0.0] | no | DEAD | no |
+| L | X2 | isync2 | 100% | +0.0 [+0.0, +0.0] | -0.0 [-0.0, +0.0] | +0.3 [+0.0, +1.0] | +0.0 [+0.0, +0.0] | no | WATCH | no |
+| L | X2 | isync1 | 100% | +0.0 [+0.0, +0.0] | +0.0 [+0.0, +0.0] | +0.3 [+0.0, +1.0] | +0.0 [+0.0, +0.0] | no | WATCH | no |
+| L | X2 | breadth | 100% | +0.0 [+0.0, +0.0] | +0.0 [+0.0, +0.0] | +0.3 [+0.0, +1.0] | +0.0 [+0.0, +0.0] | no | WATCH | no |
+| L | X2 | participation | 100% | +0.0 [+0.0, +0.0] | -0.0 [-0.0, +0.0] | +0.0 [+0.0, +0.0] | -0.3 [-1.0, +0.0] | no | DEAD | no |
+| L | X3 | isync2 | 100% | -0.4 [-0.8, -0.1] | -0.4 [-0.9, +0.0] | -0.1 [-0.4, +0.3] | +0.8 [+0.1, +1.4] | no | DEAD | no |
+| L | X3 | isync1 | 100% | -0.1 [-0.6, +0.4] | -0.1 [-0.3, +0.1] | -0.3 [-0.9, +0.3] | +0.5 [+0.2, +0.9] | no | DEAD | no |
+| L | X3 | breadth | 100% | -0.1 [-0.6, +0.3] | -0.1 [-0.5, +0.2] | +0.0 [-0.4, +0.6] | +0.9 [+0.4, +1.4] | no | WATCH | no |
+| L | X3 | participation | 100% | +0.0 [-0.2, +0.4] | +0.1 [-0.4, +0.5] | -0.0 [-0.1, +0.0] | +0.8 [+0.1, +1.5] | no | WATCH | no |
+| L | S1 | state | 6% | -17.3 [-22.0, -12.5] | +0.4 [-0.3, +1.0] | -14.0 [-21.5, -6.4] | +0.2 [-0.2, +0.5] | no | DEAD | no |
+| L | S1 | sector | 0% | -17.7 [-22.4, -12.9] | +0.0 [+0.0, +0.0] | -14.2 [-21.8, -6.6] | +0.0 [+0.0, +0.0] | no | NOT RUN (no data for this gate) | no |
+| L | S1 | breadth | 100% | -9.6 [-13.5, -5.6] | +8.1 [+4.6, +11.5] | -8.4 [-15.0, -2.2] | +5.8 [-0.3, +11.1] | YES | DEAD | no |
+| L | S1 | participation | 100% | -6.1 [-9.0, -3.1] | +11.5 [+7.6, +15.3] | -7.6 [-13.3, -2.3] | +6.6 [+0.7, +13.0] | YES | DEAD | no |
+| L | S2 | state | 0% | -21.0 [-25.2, -16.7] | +0.1 [+0.0, +0.2] | -14.8 [-20.9, -8.7] | +0.1 [+0.0, +0.4] | no | DEAD | no |
+| L | S2 | sector | 0% | -21.0 [-25.2, -16.8] | +0.0 [+0.0, +0.0] | -15.0 [-21.0, -8.8] | +0.0 [+0.0, +0.0] | no | NOT RUN (no data for this gate) | no |
+| L | S2 | breadth | 100% | -11.3 [-14.3, -8.3] | +9.8 [+6.4, +13.3] | -12.8 [-17.8, -7.9] | +2.2 [-2.7, +7.4] | YES | DEAD | no |
+| L | S2 | participation | 100% | -2.3 [-3.9, -0.6] | +18.7 [+14.3, +23.1] | -5.4 [-8.0, -2.7] | +9.6 [+3.7, +15.7] | YES | DEAD | no |
+| L | S3 | sector | 0% | -6.1 [-7.8, -4.6] | +0.0 [+0.0, +0.0] | -6.2 [-8.4, -4.0] | +0.0 [+0.0, +0.0] | no | NOT RUN (no data for this gate) | no |
+| L | S3 | breadth | 100% | -2.6 [-3.7, -1.5] | +3.5 [+2.5, +4.6] | -1.8 [-3.4, -0.1] | +4.4 [+2.8, +5.9] | YES | DEAD | no |
+| L | S3 | participation | 100% | -1.3 [-2.0, -0.6] | +4.8 [+3.4, +6.2] | -2.0 [-3.0, -0.9] | +4.2 [+2.4, +5.9] | YES | DEAD | no |
+| L | S4 | state | 100% | -0.0 [-0.0, +0.0] | +0.0 [+0.0, +0.1] | +0.0 [+0.0, +0.0] | +0.0 [+0.0, +0.0] | no | DEAD | no |
+| L | S4 | sector | 0% | -0.1 [-0.1, -0.0] | +0.0 [+0.0, +0.0] | +0.0 [+0.0, +0.0] | +0.0 [+0.0, +0.0] | no | NOT RUN (no data for this gate) | no |
+| L | S4 | breadth | 100% | +0.0 [+0.0, +0.0] | +0.1 [+0.0, +0.1] | +0.0 [+0.0, +0.0] | +0.0 [+0.0, +0.0] | no | DEAD | no |
+| L | S4 | participation | 100% | -0.1 [-0.1, -0.0] | +0.0 [+0.0, +0.0] | +0.0 [+0.0, +0.0] | +0.0 [+0.0, +0.0] | no | DEAD | no |
+| L | S5 | state | 100% | -11.0 [-15.6, -6.2] | +5.0 [+0.8, +9.1] | -5.0 [-10.6, +0.7] | +11.0 [+5.8, +16.1] | YES | DEAD | no |
+| L | S5 | sector | 0% | -16.0 [-22.4, -9.4] | +0.0 [+0.0, +0.0] | -15.9 [-22.8, -9.2] | +0.0 [+0.0, +0.0] | no | NOT RUN (no data for this gate) | no |
+| L | S5 | breadth | 100% | -0.3 [-3.6, +3.1] | +15.7 [+10.7, +21.1] | -3.9 [-8.3, +0.9] | +12.1 [+6.0, +18.7] | YES | DEAD | no |
+| L | S5 | participation | 100% | -14.6 [-21.2, -7.4] | +1.5 [-1.6, +4.4] | -14.6 [-22.8, -6.9] | +1.4 [-2.9, +5.6] | no | DEAD | no |
+| S | X1 | state | 100% | +0.3 [-0.5, +1.3] | +0.1 [-0.6, +0.7] | -0.0 [-0.7, +1.0] | +0.1 [-0.3, +0.6] | no | WATCH | no |
+| S | X1 | isync2 | 100% | +0.1 [-0.7, +1.0] | -0.2 [-0.9, +0.5] | -0.0 [-0.4, +0.3] | +0.1 [-1.0, +1.0] | no | WATCH | no |
+| S | X1 | isync1 | 100% | +0.2 [-0.8, +1.4] | -0.0 [-0.1, +0.1] | -0.1 [-1.0, +0.9] | +0.0 [-0.1, +0.2] | no | WATCH | no |
+| S | X1 | breadth | 100% | +0.0 [-0.9, +1.1] | -0.2 [-0.8, +0.2] | -0.2 [-0.9, +0.8] | -0.0 [-0.6, +0.5] | no | WATCH | no |
+| S | X1 | participation | 99% | -0.1 [-0.3, -0.0] | -0.4 [-1.5, +0.6] | +0.4 [+0.0, +1.2] | +0.6 [-0.1, +1.2] | no | WATCH | no |
+| S | X2 | state | 100% | -0.0 [-0.1, +0.0] | -0.2 [-0.7, +0.1] | -0.2 [-0.6, +0.0] | +0.0 [+0.0, +0.0] | no | DEAD | no |
+| S | X2 | isync2 | 100% | +0.1 [-0.2, +0.5] | -0.1 [-0.3, +0.1] | -0.2 [-0.5, +0.0] | +0.0 [+0.0, +0.1] | no | WATCH | no |
+| S | X2 | isync1 | 100% | +0.2 [-0.2, +0.6] | +0.0 [+0.0, +0.0] | -0.2 [-0.6, +0.0] | +0.0 [+0.0, +0.0] | no | WATCH | no |
+| S | X2 | breadth | 100% | +0.2 [-0.2, +0.6] | +0.0 [+0.0, +0.0] | -0.2 [-0.6, +0.0] | +0.0 [+0.0, +0.0] | no | WATCH | no |
+| S | X2 | participation | 100% | -0.0 [-0.1, +0.0] | -0.2 [-0.6, +0.1] | +0.0 [+0.0, +0.0] | +0.2 [+0.0, +0.6] | no | DEAD | no |
+| S | X3 | isync2 | 100% | -0.5 [-1.0, -0.0] | -0.2 [-0.6, +0.3] | -0.2 [-0.9, +0.4] | +0.3 [-0.2, +0.8] | no | DEAD | no |
+| S | X3 | isync1 | 100% | -0.4 [-1.0, +0.1] | -0.1 [-0.4, +0.1] | -0.6 [-1.3, +0.2] | +0.0 [-0.3, +0.4] | no | DEAD | no |
+| S | X3 | breadth | 100% | -0.4 [-0.9, +0.2] | -0.0 [-0.4, +0.3] | -0.5 [-1.2, +0.3] | +0.1 [-0.2, +0.5] | no | DEAD | no |
+| S | X3 | participation | 100% | -0.1 [-0.2, +0.0] | +0.2 [-0.3, +0.8] | +0.0 [+0.0, +0.1] | +0.6 [-0.2, +1.3] | no | WATCH | no |
+| S | S1 | state | 2% | +0.6 [-4.2, +5.3] | +0.2 [-0.2, +0.5] | -7.3 [-14.1, -0.3] | +0.4 [-0.0, +0.8] | no | WATCH | no |
+| S | S1 | sector | 0% | +0.4 [-4.4, +5.3] | +0.0 [+0.0, +0.0] | -7.6 [-14.6, -0.7] | +0.0 [+0.0, +0.0] | no | NOT RUN (no data for this gate) | no |
+| S | S1 | breadth | 100% | -0.9 [-5.4, +3.6] | -1.3 [-4.1, +1.3] | -5.2 [-12.3, +1.1] | +2.4 [-2.1, +6.6] | no | DEAD | no |
+| S | S1 | participation | 100% | +2.2 [-2.3, +7.0] | +1.8 [-1.5, +5.4] | -3.6 [-9.9, +2.6] | +4.0 [-1.3, +9.2] | no | WATCH | no |
+| S | S2 | state | 1% | -6.8 [-11.1, -2.2] | +0.1 [-0.0, +0.3] | -10.7 [-15.5, -5.6] | +0.0 [+0.0, +0.0] | no | DEAD | no |
+| S | S2 | sector | 0% | -6.9 [-11.3, -2.4] | +0.0 [+0.0, +0.0] | -10.7 [-15.5, -5.6] | +0.0 [+0.0, +0.0] | no | NOT RUN (no data for this gate) | no |
+| S | S2 | breadth | 100% | -6.4 [-10.8, -2.5] | +0.5 [-2.7, +3.2] | -10.2 [-14.6, -5.5] | +0.5 [-3.0, +4.4] | no | DEAD | no |
+| S | S2 | participation | 100% | -1.8 [-3.4, -0.4] | +5.1 [+0.8, +9.0] | -6.3 [-8.9, -3.4] | +4.4 [-0.2, +9.3] | YES | DEAD | no |
+| S | S3 | sector | 0% | -7.0 [-9.3, -4.4] | +0.0 [+0.0, +0.0] | -11.7 [-14.6, -8.7] | +0.0 [+0.0, +0.0] | no | NOT RUN (no data for this gate) | no |
+| S | S3 | breadth | 100% | -3.7 [-5.8, -1.5] | +3.2 [+2.3, +4.2] | -5.7 [-8.8, -2.6] | +6.1 [+4.2, +8.0] | YES | DEAD | no |
+| S | S3 | participation | 100% | -1.4 [-2.5, -0.4] | +5.5 [+3.5, +7.4] | -3.2 [-4.8, -1.6] | +8.5 [+5.9, +10.9] | YES | DEAD | no |
+| S | S4 | state | 100% | -0.0 [-0.0, +0.0] | +0.0 [+0.0, +0.0] | -0.0 [-0.0, +0.0] | +0.0 [-0.1, +0.1] | no | DEAD | no |
+| S | S4 | sector | 0% | -0.0 [-0.1, -0.0] | +0.0 [+0.0, +0.0] | -0.0 [-0.1, +0.0] | +0.0 [+0.0, +0.0] | no | NOT RUN (no data for this gate) | no |
+| S | S4 | breadth | 100% | -0.0 [-0.1, +0.0] | +0.0 [+0.0, +0.0] | +0.0 [+0.0, +0.0] | +0.0 [-0.0, +0.1] | no | DEAD | no |
+| S | S4 | participation | 100% | -0.0 [-0.1, -0.0] | +0.0 [+0.0, +0.0] | -0.0 [-0.1, +0.0] | +0.0 [+0.0, +0.0] | no | DEAD | no |
+| S | S5 | state | 100% | -3.0 [-7.1, +1.3] | +3.8 [+0.0, +7.8] | -9.4 [-15.1, -3.8] | +3.3 [-1.2, +7.7] | no | DEAD | no |
+| S | S5 | sector | 0% | -6.8 [-12.2, -1.8] | +0.0 [+0.0, +0.0] | -12.7 [-19.9, -5.0] | +0.0 [+0.0, +0.0] | no | NOT RUN (no data for this gate) | no |
+| S | S5 | breadth | 100% | -2.0 [-6.4, +2.3] | +4.8 [+2.2, +7.4] | -8.1 [-14.6, -1.8] | +4.5 [+0.6, +8.3] | YES | DEAD | no |
+| S | S5 | participation | 100% | -6.5 [-11.2, -1.8] | +0.3 [-2.8, +3.7] | -13.8 [-21.6, -6.2] | -1.2 [-7.2, +4.5] | no | DEAD | no |
+
+Reality Check on the best paired improvement: G2 L p = +0.000, G2 S p = +0.000, G3 L p = +0.082, G3 S p = +0.790.
+
+## G3: management on each selected cell (paired with the time exit)
+
+Per initial capital; 'per peak' divides each trade by its largest position (1.5x after P1, 1.75x after P2). 'adds' = paired discovery lower bound > 0 and paired confirmation mean > 0.
+
+| side | family | variant | discovery bp/day | per peak | vs time exit | confirmation bp/day | vs time exit | exp. R | MFE capture | MAE bp | worst day bp | losing streak | top 5% share | adds |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| L | X1 | base | -0.1 [-0.8, +0.6] | -0.1 | - | -0.8 [-1.4, -0.2] | - | -0.306 | +0.16 | -14.9 | -49.0 | 2 | n/a | - |
+| L | X1 | P1 | -0.2 [-0.9, +0.7] | -0.3 | -0.0 [-0.4, +0.3] | -0.7 [-1.4, -0.0] | +0.1 [-0.1, +0.2] | -0.503 | +0.07 | -14.9 | -49.0 | 2 | n/a | no |
+| L | X1 | P2 | -0.3 [-1.1, +0.6] | -0.5 | -0.2 [-0.6, +0.2] | -0.8 [-1.5, -0.1] | -0.0 [-0.3, +0.2] | -0.881 | +0.00 | -14.9 | -49.0 | 2 | n/a | no |
+| L | X1 | T1 | -0.0 [-0.6, +0.6] | -0.0 | +0.1 [-0.4, +0.5] | -0.7 [-1.0, -0.4] | +0.1 [-0.3, +0.6] | -0.331 | +0.19 | -14.9 | -25.6 | 2 | n/a | no |
+| L | X1 | T2 | -0.1 [-0.7, +0.5] | -0.1 | +0.0 [-0.5, +0.4] | -0.7 [-1.3, -0.2] | +0.0 [-0.2, +0.2] | -0.257 | +0.16 | -14.9 | -41.7 | 2 | n/a | no |
+| L | X1 | P1T1 | -0.1 [-0.8, +0.9] | -0.2 | +0.1 [-0.5, +0.6] | -0.7 [-1.0, -0.5] | +0.0 [-0.4, +0.5] | -0.530 | +0.12 | -14.9 | -27.3 | 2 | n/a | no |
+| L | X2 | base | +0.0 [+0.0, +0.0] | +0.0 | - | +0.3 [+0.0, +1.0] | - | +1.107 | +0.25 | -8.1 | +0.0 | 0 | 100.0% | - |
+| L | X2 | P1 | +0.0 [+0.0, +0.0] | +0.0 | +0.0 [+0.0, +0.0] | +0.4 [+0.0, +1.2] | +0.1 [+0.0, +0.2] | +1.141 | +0.21 | -8.1 | +0.0 | 0 | 100.0% | no |
+| L | X2 | P2 | +0.0 [+0.0, +0.0] | +0.0 | -0.0 [-0.0, +0.0] | +0.4 [+0.0, +1.1] | +0.1 [+0.0, +0.2] | +0.888 | +0.17 | -8.1 | +0.0 | 0 | 100.0% | no |
+| L | X2 | T1 | -0.0 [-0.0, +0.0] | -0.0 | -0.0 [-0.1, +0.0] | +0.3 [+0.0, +1.0] | +0.0 [+0.0, +0.0] | -1.276 | -0.07 | -8.1 | -12.0 | 1 | n/a | no |
+| L | X2 | T2 | +0.0 [+0.0, +0.1] | +0.0 | +0.0 [+0.0, +0.1] | +0.3 [+0.0, +0.9] | -0.0 [-0.1, +0.0] | +2.737 | +0.47 | -8.1 | +0.0 | 0 | 100.0% | no |
+| L | X2 | P1T1 | -0.0 [-0.0, +0.0] | -0.0 | -0.0 [-0.1, +0.0] | +0.4 [+0.0, +1.2] | +0.1 [+0.0, +0.2] | -1.276 | -0.07 | -8.1 | -12.0 | 1 | n/a | no |
+| L | X3 | base | -0.0 [-0.6, +0.6] | -0.0 | - | -0.8 [-1.5, -0.1] | - | -0.005 | +0.32 | -14.6 | -54.5 | 2 | n/a | - |
+| L | X3 | P1 | +0.0 [-0.6, +0.7] | -0.2 | +0.0 [-0.1, +0.1] | -0.8 [-1.5, +0.0] | +0.0 [+0.0, +0.1] | -0.006 | +0.21 | -14.6 | -54.5 | 2 | 23660.7% | no |
+| L | X3 | P2 | -0.0 [-0.6, +0.7] | -0.3 | +0.0 [-0.1, +0.1] | -0.8 [-1.5, +0.0] | +0.0 [+0.0, +0.1] | -0.006 | +0.20 | -14.6 | -54.5 | 2 | n/a | no |
+| L | X3 | T1 | -0.4 [-0.8, +0.2] | -0.4 | -0.3 [-0.7, +0.0] | -0.6 [-1.2, +0.1] | +0.2 [-0.0, +0.6] | -0.179 | +0.14 | -14.6 | -29.8 | 3 | n/a | no |
+| L | X3 | T2 | -0.2 [-0.7, +0.3] | -0.2 | -0.2 [-0.6, +0.1] | -0.9 [-1.5, -0.3] | -0.1 [-0.5, +0.3] | -0.114 | +0.20 | -14.6 | -29.8 | 3 | n/a | no |
+| L | X3 | P1T1 | -0.3 [-0.8, +0.3] | -0.5 | -0.3 [-0.7, +0.0] | -0.6 [-1.2, +0.2] | +0.3 [+0.0, +0.6] | -0.179 | +0.08 | -14.6 | -29.8 | 3 | n/a | no |
+| S | X1 | base | +0.2 [-0.8, +1.4] | +0.2 | - | -0.2 [-1.1, +0.9] | - | +0.449 | +0.29 | -12.4 | -65.7 | 4 | 383.0% | - |
+| S | X1 | P1 | +0.4 [-1.0, +1.9] | -0.1 | +0.1 [-0.5, +0.7] | +0.0 [-1.1, +1.4] | +0.2 [-0.1, +0.5] | +0.690 | +0.20 | -12.4 | -65.7 | 4 | 363.4% | no |
+| S | X1 | P2 | +0.4 [-1.0, +2.0] | -0.2 | +0.1 [-0.7, +0.9] | -0.6 [-1.2, +0.0] | -0.5 [-1.3, +0.1] | +0.832 | +0.15 | -12.4 | -65.7 | 4 | 435.5% | no |
+| S | X1 | T1 | +0.2 [-0.7, +1.1] | +0.2 | -0.1 [-0.7, +0.5] | -0.3 [-0.8, +0.3] | -0.1 [-0.8, +0.4] | +0.251 | +0.26 | -12.4 | -32.1 | 4 | 563.2% | no |
+| S | X1 | T2 | +0.0 [-0.7, +0.8] | +0.0 | -0.2 [-0.9, +0.4] | -0.3 [-1.0, +0.5] | -0.1 [-0.6, +0.3] | +0.056 | +0.22 | -12.4 | -32.1 | 4 | 2041.9% | no |
+| S | X1 | P1T1 | +0.3 [-0.8, +1.7] | -0.0 | +0.1 [-0.7, +0.8] | -0.3 [-0.9, +0.3] | -0.2 [-0.8, +0.3] | +0.559 | +0.20 | -12.4 | -32.1 | 4 | 382.6% | no |
+| S | X2 | base | +0.2 [-0.2, +0.6] | +0.2 | - | -0.2 [-0.6, +0.0] | - | +0.100 | +0.48 | -27.2 | -32.2 | 1 | 93.6% | - |
+| S | X2 | P1 | -0.0 [-0.3, +0.3] | -0.0 | -0.2 [-0.6, +0.1] | -0.2 [-0.6, +0.0] | +0.0 [+0.0, +0.0] | -0.310 | +0.03 | -27.2 | -34.2 | 1 | n/a | no |
+| S | X2 | P2 | -0.0 [-0.3, +0.3] | -0.1 | -0.2 [-0.6, +0.1] | -0.2 [-0.6, +0.0] | +0.0 [+0.0, +0.0] | -0.387 | -0.02 | -27.2 | -34.2 | 1 | n/a | no |
+| S | X2 | T1 | -0.2 [-0.3, -0.1] | -0.2 | -0.3 [-0.9, +0.0] | -0.1 [-0.3, +0.0] | +0.1 [+0.0, +0.3] | -0.784 | -0.23 | -27.2 | -25.5 | 1 | n/a | no |
+| S | X2 | T2 | -0.2 [-0.4, -0.1] | -0.2 | -0.4 [-0.9, +0.0] | -0.1 [-0.4, +0.0] | +0.1 [+0.0, +0.3] | -0.991 | -0.33 | -27.2 | -39.4 | 1 | n/a | no |
+| S | X2 | P1T1 | -0.2 [-0.3, -0.1] | -0.2 | -0.3 [-0.9, +0.0] | -0.1 [-0.3, +0.0] | +0.1 [+0.0, +0.3] | -0.784 | -0.23 | -27.2 | -25.5 | 1 | n/a | no |
+| S | X3 | base | -0.3 [-0.9, +0.3] | -0.3 | - | -0.6 [-1.3, +0.2] | - | -0.124 | +0.15 | -18.4 | -49.9 | 2 | n/a | - |
+| S | X3 | P1 | -0.4 [-1.0, +0.2] | -0.6 | -0.1 [-0.4, +0.1] | -0.6 [-1.4, +0.2] | -0.1 [-0.2, +0.1] | -0.148 | -0.01 | -18.4 | -49.9 | 2 | n/a | no |
+| S | X3 | P2 | -0.4 [-1.1, +0.2] | -0.7 | -0.1 [-0.4, +0.1] | -0.6 [-1.4, +0.2] | -0.1 [-0.2, +0.1] | -0.148 | -0.02 | -18.4 | -49.9 | 2 | n/a | no |
+| S | X3 | T1 | -0.3 [-0.8, +0.2] | -0.3 | +0.0 [-0.4, +0.4] | -0.7 [-1.3, -0.2] | -0.2 [-0.8, +0.4] | -0.109 | +0.16 | -18.4 | -33.9 | 2 | n/a | no |
+| S | X3 | T2 | -0.4 [-0.8, +0.1] | -0.4 | -0.1 [-0.5, +0.3] | -0.9 [-1.4, -0.3] | -0.3 [-0.9, +0.3] | -0.140 | +0.11 | -18.4 | -30.9 | 2 | n/a | no |
+| S | X3 | P1T1 | -0.4 [-0.9, +0.1] | -0.6 | -0.1 [-0.6, +0.4] | -0.9 [-1.4, -0.4] | -0.3 [-1.0, +0.2] | -0.130 | +0.04 | -18.4 | -33.9 | 2 | n/a | no |
+| L | S1 | base | -17.7 [-22.4, -12.9] | -17.7 | - | -14.2 [-21.8, -6.6] | - | -0.203 | -0.05 | -92.9 | -280.6 | 16 | n/a | - |
+| L | S1 | P1 | -20.3 [-25.4, -15.2] | -30.6 | -2.7 [-4.1, -1.3] | -16.7 [-25.2, -7.8] | -2.5 [-4.6, -0.4] | -0.239 | -0.16 | -92.9 | -280.6 | 13 | n/a | no |
+| L | S1 | P2 | -20.0 [-25.2, -14.7] | -33.3 | -2.4 [-4.0, -0.8] | -17.0 [-25.4, -8.3] | -2.8 [-5.3, -0.2] | -0.240 | -0.18 | -92.9 | -280.6 | 16 | n/a | no |
+| L | S1 | T1 | -14.0 [-16.3, -11.6] | -14.0 | +3.6 [-0.2, +7.6] | -11.2 [-14.8, -7.3] | +3.0 [-3.3, +9.4] | -0.158 | -0.02 | -92.9 | -105.1 | 16 | n/a | no |
+| L | S1 | T2 | -18.2 [-22.3, -14.1] | -18.2 | -0.6 [-2.7, +1.6] | -13.7 [-19.9, -7.9] | +0.5 [-3.1, +3.8] | -0.214 | -0.05 | -92.9 | -280.6 | 13 | n/a | no |
+| L | S1 | P1T1 | -15.4 [-17.9, -12.7] | -19.7 | +2.3 [-1.5, +6.3] | -12.5 [-16.4, -8.2] | +1.7 [-4.7, +8.1] | -0.172 | -0.07 | -92.9 | -105.1 | 18 | n/a | no |
+| L | S2 | base | -21.0 [-25.2, -16.8] | -21.0 | - | -15.0 [-21.0, -8.8] | - | -0.249 | -0.07 | -81.3 | -171.0 | 14 | n/a | - |
+| L | S2 | P1 | -22.6 [-27.2, -18.2] | -32.7 | -1.5 [-2.7, -0.2] | -16.7 [-23.3, -10.1] | -1.8 [-3.9, +0.2] | -0.275 | -0.18 | -81.3 | -171.0 | 14 | n/a | no |
+| L | S2 | P2 | -23.2 [-27.8, -18.7] | -36.5 | -2.2 [-3.9, -0.5] | -17.5 [-24.1, -11.0] | -2.6 [-5.2, -0.0] | -0.281 | -0.21 | -81.3 | -171.0 | 14 | n/a | no |
+| L | S2 | T1 | -16.9 [-19.5, -14.3] | -16.9 | +4.1 [+1.2, +7.1] | -11.5 [-16.3, -6.6] | +3.4 [-0.4, +7.3] | -0.204 | -0.04 | -81.3 | -135.6 | 22 | n/a | YES |
+| L | S2 | T2 | -19.5 [-22.7, -16.2] | -19.5 | +1.6 [-0.7, +3.8] | -13.5 [-18.9, -7.9] | +1.4 [-1.4, +4.2] | -0.238 | -0.06 | -81.3 | -171.0 | 14 | n/a | no |
+| L | S2 | P1T1 | -19.0 [-21.9, -16.2] | -25.3 | +2.0 [-1.0, +5.1] | -12.7 [-17.9, -7.1] | +2.3 [-1.6, +6.1] | -0.235 | -0.12 | -81.3 | -135.6 | 24 | n/a | no |
+| L | S3 | base | -6.1 [-7.8, -4.6] | -6.1 | - | -6.2 [-8.4, -4.0] | - | -0.185 | +0.04 | -40.5 | -90.9 | 11 | n/a | - |
+| L | S3 | P1 | -7.4 [-9.1, -5.6] | -10.0 | -1.2 [-1.8, -0.7] | -7.4 [-9.7, -5.1] | -1.2 [-1.8, -0.6] | -0.225 | -0.08 | -40.5 | -94.5 | 14 | n/a | no |
+| L | S3 | P2 | -7.7 [-9.4, -5.9] | -10.9 | -1.6 [-2.2, -0.9] | -7.7 [-10.1, -5.5] | -1.6 [-2.3, -0.9] | -0.240 | -0.11 | -40.5 | -91.4 | 19 | n/a | no |
+| L | S3 | T1 | -7.2 [-8.4, -6.0] | -7.2 | -1.1 [-2.0, -0.2] | -8.4 [-10.0, -6.7] | -2.2 [-3.6, -0.9] | -0.227 | -0.00 | -40.5 | -62.8 | 14 | n/a | no |
+| L | S3 | T2 | -6.9 [-8.0, -5.6] | -6.9 | -0.7 [-1.7, +0.1] | -7.7 [-9.5, -5.8] | -1.5 [-2.8, -0.3] | -0.210 | +0.01 | -40.5 | -60.8 | 12 | n/a | no |
+| L | S3 | P1T1 | -8.0 [-9.3, -6.7] | -9.9 | -1.9 [-2.9, -0.9] | -9.3 [-11.1, -7.3] | -3.1 [-4.6, -1.7] | -0.251 | -0.09 | -40.5 | -66.0 | 17 | n/a | no |
+| L | S5 | base | -16.0 [-22.4, -9.4] | -16.0 | - | -15.9 [-22.8, -9.2] | - | -0.056 | -0.03 | -132.3 | -327.8 | 13 | n/a | - |
+| L | S5 | P1 | -16.9 [-23.3, -9.8] | -24.8 | -0.9 [-1.6, -0.2] | -17.1 [-24.0, -10.3] | -1.1 [-1.8, -0.5] | -0.060 | -0.09 | -132.3 | -327.8 | 13 | n/a | no |
+| L | S5 | P2 | -16.9 [-23.3, -10.0] | -25.4 | -0.9 [-1.6, -0.2] | -17.2 [-24.2, -10.4] | -1.3 [-2.1, -0.5] | -0.061 | -0.09 | -132.3 | -327.8 | 13 | n/a | no |
+| L | S5 | T1 | -11.5 [-14.1, -8.8] | -11.5 | +4.6 [-0.5, +9.5] | -10.4 [-14.5, -6.4] | +5.5 [-0.4, +11.2] | -0.037 | +0.01 | -132.3 | -148.4 | 14 | n/a | no |
+| L | S5 | T2 | -10.0 [-13.3, -6.3] | -10.0 | +6.0 [+1.8, +10.2] | -10.5 [-15.8, -5.3] | +5.4 [-0.3, +10.6] | -0.034 | +0.02 | -132.3 | -148.6 | 12 | n/a | YES |
+| L | S5 | P1T1 | -11.9 [-14.6, -9.2] | -14.8 | +4.1 [-1.0, +9.0] | -10.8 [-15.0, -6.8] | +5.2 [-0.9, +10.8] | -0.038 | -0.02 | -132.3 | -148.4 | 14 | n/a | no |
+| S | S1 | base | +0.4 [-4.4, +5.3] | +0.4 | - | -7.6 [-14.6, -0.7] | - | -0.020 | +0.10 | -92.9 | -203.1 | 8 | 5083.4% | - |
+| S | S1 | P1 | -1.9 [-7.1, +3.4] | -16.3 | -2.3 [-3.8, -0.9] | -8.8 [-16.3, -1.1] | -1.2 [-2.9, +0.6] | -0.052 | -0.02 | -92.9 | -198.1 | 14 | n/a | no |
+| S | S1 | P2 | -4.2 [-9.2, +0.8] | -21.3 | -4.6 [-6.3, -2.8] | -9.2 [-17.0, -1.5] | -1.6 [-3.7, +0.5] | -0.082 | -0.06 | -92.9 | -198.1 | 15 | n/a | no |
+| S | S1 | T1 | -8.9 [-11.4, -6.4] | -8.9 | -9.3 [-13.3, -5.3] | -8.2 [-12.8, -3.6] | -0.5 [-6.1, +5.2] | -0.107 | +0.02 | -92.9 | -97.7 | 14 | n/a | no |
+| S | S1 | T2 | -2.6 [-6.5, +1.6] | -2.6 | -3.0 [-5.6, -0.2] | -6.0 [-13.2, +1.3] | +1.6 [-2.6, +5.7] | -0.053 | +0.08 | -92.9 | -191.5 | 10 | n/a | no |
+| S | S1 | P1T1 | -9.9 [-12.6, -7.0] | -15.8 | -10.4 [-14.3, -6.3] | -9.1 [-14.1, -4.2] | -1.5 [-7.2, +4.5] | -0.121 | -0.03 | -92.9 | -97.7 | 15 | n/a | no |
+| S | S2 | base | -6.9 [-11.3, -2.4] | -6.9 | - | -10.7 [-15.5, -5.6] | - | -0.108 | +0.06 | -75.0 | -226.0 | 11 | n/a | - |
+| S | S2 | P1 | -9.3 [-14.4, -4.1] | -20.5 | -2.4 [-3.9, -0.9] | -13.6 [-18.8, -7.8] | -2.8 [-5.1, -0.7] | -0.141 | -0.06 | -75.0 | -192.9 | 12 | n/a | no |
+| S | S2 | P2 | -10.7 [-15.7, -5.5] | -24.8 | -3.8 [-5.6, -2.0] | -13.7 [-18.7, -8.0] | -3.0 [-5.5, -0.5] | -0.163 | -0.10 | -75.0 | -192.9 | 14 | n/a | no |
+| S | S2 | T1 | -10.9 [-14.1, -7.7] | -10.9 | -4.1 [-6.6, -1.4] | -11.1 [-15.3, -6.6] | -0.4 [-5.3, +5.1] | -0.159 | +0.01 | -75.0 | -199.3 | 15 | n/a | no |
+| S | S2 | T2 | -9.5 [-13.0, -6.2] | -9.5 | -2.7 [-5.0, -0.4] | -9.2 [-14.1, -3.7] | +1.6 [-2.7, +6.2] | -0.140 | +0.03 | -75.0 | -136.3 | 13 | n/a | no |
+| S | S2 | P1T1 | -13.2 [-17.0, -9.4] | -19.5 | -6.3 [-8.9, -3.7] | -12.5 [-17.1, -7.5] | -1.8 [-7.2, +3.9] | -0.188 | -0.06 | -75.0 | -199.3 | 18 | n/a | no |
+| S | S3 | base | -7.0 [-9.3, -4.4] | -7.0 | - | -11.7 [-14.6, -8.7] | - | -0.149 | +0.08 | -40.9 | -84.8 | 16 | n/a | - |
+| S | S3 | P1 | -8.8 [-11.3, -6.1] | -12.0 | -1.8 [-2.3, -1.2] | -13.6 [-16.8, -10.3] | -1.9 [-2.4, -1.3] | -0.188 | -0.04 | -40.9 | -78.5 | 17 | n/a | no |
+| S | S3 | P2 | -9.0 [-11.4, -6.4] | -12.8 | -2.0 [-2.6, -1.4] | -14.2 [-17.4, -11.0] | -2.5 [-3.2, -1.8] | -0.192 | -0.06 | -40.9 | -73.5 | 17 | n/a | no |
+| S | S3 | T1 | -10.2 [-11.7, -8.6] | -10.2 | -3.3 [-4.7, -1.9] | -11.6 [-13.6, -9.6] | +0.1 [-1.7, +1.8] | -0.204 | -0.01 | -40.9 | -53.4 | 20 | n/a | no |
+| S | S3 | T2 | -9.2 [-10.8, -7.5] | -9.2 | -2.2 [-3.5, -1.0] | -11.7 [-13.7, -9.7] | -0.0 [-1.7, +1.7] | -0.186 | +0.02 | -40.9 | -49.2 | 27 | n/a | no |
+| S | S3 | P1T1 | -11.6 [-13.2, -9.8] | -13.7 | -4.6 [-6.0, -3.2] | -12.8 [-14.9, -10.6] | -1.1 [-2.9, +0.5] | -0.231 | -0.09 | -40.9 | -53.4 | 21 | n/a | no |
+| S | S5 | base | -6.8 [-12.2, -1.8] | -6.8 | - | -12.7 [-19.9, -5.0] | - | -0.037 | +0.05 | -104.7 | -762.7 | 9 | n/a | - |
+| S | S5 | P1 | -7.0 [-12.2, -1.7] | -11.7 | -0.2 [-0.7, +0.4] | -13.1 [-20.8, -5.3] | -0.5 [-1.2, +0.3] | -0.038 | +0.01 | -104.7 | -762.7 | 10 | n/a | no |
+| S | S5 | P2 | -7.3 [-12.7, -2.3] | -12.2 | -0.5 [-1.5, +0.3] | -13.2 [-20.9, -5.5] | -0.6 [-1.4, +0.3] | -0.039 | +0.00 | -104.7 | -762.7 | 10 | n/a | no |
+| S | S5 | T1 | -9.8 [-12.6, -6.7] | -9.8 | -3.0 [-7.5, +1.8] | -11.5 [-14.6, -8.2] | +1.1 [-5.2, +7.6] | -0.041 | +0.02 | -104.7 | -163.6 | 13 | n/a | no |
+| S | S5 | T2 | -6.9 [-10.4, -3.3] | -6.9 | -0.1 [-3.9, +4.0] | -7.8 [-11.6, -3.7] | +4.8 [-1.2, +10.7] | -0.035 | +0.05 | -104.7 | -322.6 | 12 | n/a | no |
+| S | S5 | P1T1 | -9.9 [-12.8, -6.5] | -11.8 | -3.1 [-7.6, +1.9] | -11.8 [-15.0, -8.5] | +0.8 [-5.5, +7.3] | -0.042 | +0.00 | -104.7 | -163.6 | 16 | n/a | no |
+| L | S4 | base | -0.1 [-0.1, -0.0] | -0.1 | - | +0.0 [+0.0, +0.0] | - | -1.025 | -0.95 | -180.4 | -25.1 | 1 | n/a | - |
+| L | S4 | P1 | -0.1 [-0.1, -0.0] | -0.1 | +0.0 [+0.0, +0.0] | +0.0 [+0.0, +0.0] | +0.0 [+0.0, +0.0] | -0.970 | -0.91 | -180.4 | -24.3 | 1 | n/a | no |
+| L | S4 | P2 | -0.1 [-0.1, -0.0] | -0.1 | +0.0 [+0.0, +0.0] | +0.0 [+0.0, +0.0] | +0.0 [+0.0, +0.0] | -0.970 | -0.91 | -180.4 | -24.3 | 1 | n/a | no |
+| L | S4 | T1 | -0.0 [-0.0, +0.0] | -0.0 | +0.0 [+0.0, +0.1] | +0.0 [+0.0, +0.0] | +0.0 [+0.0, +0.0] | -0.089 | -0.00 | -180.4 | -4.2 | 1 | n/a | no |
+| L | S4 | T2 | -0.0 [-0.1, -0.0] | -0.0 | +0.0 [-0.0, +0.1] | +0.0 [+0.0, +0.0] | +0.0 [+0.0, +0.0] | +0.084 | -0.56 | -180.4 | -9.7 | 1 | n/a | no |
+| L | S4 | P1T1 | -0.0 [-0.0, +0.0] | -0.0 | +0.0 [+0.0, +0.1] | +0.0 [+0.0, +0.0] | +0.0 [+0.0, +0.0] | -0.089 | -0.00 | -180.4 | -4.2 | 1 | n/a | no |
+| S | S4 | base | -0.0 [-0.1, -0.0] | -0.0 | - | -0.0 [-0.1, +0.0] | - | -0.595 | -0.89 | -134.5 | -6.3 | 1 | n/a | - |
+| S | S4 | P1 | -0.0 [-0.1, -0.0] | -0.0 | -0.0 [-0.0, +0.0] | -0.0 [-0.1, +0.0] | +0.0 [-0.0, +0.0] | -0.752 | -0.96 | -134.5 | -6.3 | 1 | n/a | no |
+| S | S4 | P2 | -0.0 [-0.1, -0.0] | -0.0 | -0.0 [-0.0, +0.0] | +0.0 [-0.0, +0.1] | +0.0 [-0.0, +0.1] | -0.752 | -0.96 | -134.5 | -6.3 | 1 | n/a | no |
+| S | S4 | T1 | -0.0 [-0.0, -0.0] | -0.0 | +0.0 [-0.0, +0.0] | -0.0 [-0.0, +0.0] | +0.0 [-0.1, +0.1] | -0.258 | -0.48 | -134.5 | -8.5 | 1 | n/a | no |
+| S | S4 | T2 | -0.0 [-0.1, +0.0] | -0.0 | +0.0 [-0.0, +0.0] | -0.0 [-0.1, +0.0] | -0.0 [-0.1, +0.0] | -0.457 | -0.87 | -134.5 | -11.9 | 1 | n/a | no |
+| S | S4 | P1T1 | -0.0 [-0.0, -0.0] | -0.0 | +0.0 [-0.0, +0.0] | -0.0 [-0.0, +0.0] | +0.0 [-0.1, +0.1] | -0.258 | -0.48 | -134.5 | -8.5 | 1 | n/a | no |
+
+Recomputation check: the time-exit book rebuilt from the bars matches pass 1 in 16 of 16 cells (expected all).
+
+## Controls: the same entry times with a random side
+
+Each selected cell's trades with a fixed random side per trade (the stop mirrored at the same distance). 'Direction skill' = the cell minus this book, paired.
+
+| side | family | random side disc bp/day | direction skill disc | conf bp/day | direction skill conf |
+|---|---|---|---|---|---|
+| L | X1 | -0.7 [-1.2, -0.2] | +0.6 [-0.2, +1.5] | -0.5 | -0.2 [-1.0, +0.5] |
+| L | X2 | -0.0 [-0.1, +0.0] | +0.0 [+0.0, +0.1] | -0.2 | +0.5 [+0.0, +1.6] |
+| L | X3 | -0.9 [-1.4, -0.4] | +0.9 [+0.3, +1.6] | -1.1 | +0.2 [-0.6, +1.3] |
+| S | X1 | -0.1 [-1.0, +0.9] | +0.4 [-0.5, +1.3] | -0.5 | +0.3 [-1.0, +1.8] |
+| S | X2 | -0.0 [-0.4, +0.5] | +0.2 [-0.6, +0.9] | +0.2 | -0.4 [-1.2, +0.0] |
+| S | X3 | -0.1 [-0.7, +0.6] | -0.2 [-1.1, +0.6] | -0.4 | -0.2 [-1.6, +1.2] |
+| L | S1 | -11.9 [-15.5, -8.3] | -5.8 [-11.1, -0.5] | -9.6 | -4.6 [-12.8, +3.7] |
+| L | S2 | -12.9 [-15.8, -10.0] | -8.1 [-12.9, -3.7] | -9.1 | -5.9 [-13.2, +1.5] |
+| L | S3 | -7.0 [-8.2, -5.8] | +0.9 [-0.7, +2.5] | -8.8 | +2.6 [+0.3, +5.0] |
+| L | S5 | -14.2 [-18.4, -10.0] | -1.8 [-8.9, +6.1] | -8.4 | -7.5 [-17.0, +1.6] |
+| S | S1 | -9.8 [-13.6, -5.9] | +10.2 [+4.6, +15.9] | -13.2 | +5.6 [-2.4, +13.6] |
+| S | S2 | -12.3 [-15.0, -9.6] | +5.4 [+0.6, +10.2] | -12.2 | +1.4 [-4.0, +7.0] |
+| S | S3 | -9.7 [-11.3, -8.1] | +2.7 [+0.5, +5.0] | -11.1 | -0.6 [-3.7, +2.4] |
+| S | S5 | -13.5 [-17.3, -8.9] | +6.7 [+0.0, +12.7] | -8.8 | -3.8 [-13.4, +6.6] |
+| L | S4 | -0.0 [-0.0, +0.0] | -0.0 [-0.1, +0.0] | +0.0 | +0.0 [+0.0, +0.0] |
+| S | S4 | +0.0 [-0.0, +0.0] | -0.0 [-0.1, +0.0] | -0.1 | +0.1 [+0.0, +0.2] |
+
+## Where each selected cell makes its money: by the day's 10:00 state (descriptive)
+
+| side | family | window | TRAP bp/day (days) | KINETIC | RANGE | NA |
 |---|---|---|---|---|---|---|
-| 2021-10-18 | 2024-11-19 | 768 | -12.2 | +3.4 | -4.4 | +0.3 |
-| 2024-11-20 | 2025-07-02 | 153 | -18.3 | -9.3 | -13.8 | +1.3 |
-| 2025-07-03 | 2025-08-29 | 40 | -16.9 | +10.3 | -3.3 | -2.8 |
-| 2025-09-01 | 2026-03-30 | 144 | -14.2 | -0.3 | -7.2 | +0.2 |
-| 2026-04-01 | 2026-07-31 | 83 | +3.1 | -5.0 | -1.0 | -3.9 |
-| 2026-08-03 | 2026-09-04 | 25 | -26.9 | -14.4 | -20.6 | -2.5 |
-| 2026-09-07 | 2026-10-09 | 23 | -26.5 | +1.6 | -12.4 | +0.8 |
+| L | X1 | disc | -0.8 [-2.6, +1.4] (195) | +0.3 [-0.5, +1.3] (453) | -0.7 [-1.5, -0.1] (149) | +0.0 (9) |
+| L | X1 | conf | -1.6 [-3.5, -0.1] (99) | -0.5 [-1.2, +0.3] (209) | -0.5 [-1.2, +0.0] (83) | +0.0 (1) |
+| L | X2 | disc | +0.0 [+0.0, +0.0] (195) | +0.0 [+0.0, +0.0] (453) | +0.1 [+0.0, +0.2] (149) | +0.0 (9) |
+| L | X2 | conf | +0.0 [+0.0, +0.0] (99) | +0.0 [+0.0, +0.0] (209) | +1.5 [+0.0, +4.6] (83) | +0.0 (1) |
+| L | X3 | disc | +0.2 [-0.6, +1.0] (195) | +0.1 [-0.6, +0.8] (453) | -0.5 [-2.1, +1.1] (149) | +0.0 (9) |
+| L | X3 | conf | -1.0 [-2.5, +0.3] (99) | -0.6 [-1.7, +0.6] (209) | -1.3 [-2.7, -0.2] (83) | +0.0 (1) |
+| L | S1 | disc | -16.6 [-27.3, -4.2] (195) | -19.1 [-25.8, -12.5] (453) | -15.8 [-25.1, -6.3] (149) | +0.0 (9) |
+| L | S1 | conf | -24.9 [-37.5, -12.0] (99) | -11.2 [-21.3, -0.3] (209) | -9.1 [-23.4, +3.8] (83) | +0.0 (1) |
+| L | S2 | disc | -19.1 [-25.6, -12.6] (195) | -23.4 [-29.3, -17.4] (453) | -17.5 [-27.3, -8.3] (149) | +0.0 (9) |
+| L | S2 | conf | -20.9 [-31.5, -10.0] (99) | -11.5 [-19.4, -3.9] (209) | -16.9 [-26.0, -8.0] (83) | +0.0 (1) |
+| L | S3 | disc | -6.5 [-9.7, -3.2] (195) | -6.3 [-8.4, -4.3] (453) | -5.4 [-8.3, -2.6] (149) | +0.0 (9) |
+| L | S3 | conf | -4.7 [-8.2, -1.8] (99) | -7.0 [-10.2, -3.8] (209) | -5.9 [-11.2, +0.1] (83) | +0.0 (1) |
+| L | S4 | disc | +0.0 [+0.0, +0.0] (195) | -0.1 [-0.2, +0.0] (453) | -0.0 [-0.1, +0.0] (149) | +0.0 (9) |
+| L | S4 | conf | +0.0 [+0.0, +0.0] (99) | +0.0 [+0.0, +0.0] (209) | +0.0 [+0.0, +0.0] (83) | +0.0 (1) |
+| L | S5 | disc | -14.5 [-25.8, -3.8] (195) | -19.6 [-27.7, -10.9] (453) | -8.0 [-22.5, +8.4] (149) | +0.0 (9) |
+| L | S5 | conf | -20.6 [-34.2, -6.8] (99) | -9.3 [-19.2, +1.3] (209) | -27.3 [-50.8, -7.7] (83) | +0.0 (1) |
+| S | X1 | disc | +1.6 [-1.5, +5.1] (195) | -0.2 [-1.2, +1.0] (453) | -0.2 [-0.9, +0.5] (149) | +0.0 (9) |
+| S | X1 | conf | -2.1 [-3.5, -1.0] (99) | -0.3 [-1.0, +0.7] (209) | +2.5 [-0.0, +7.4] (83) | +0.0 (1) |
+| S | X2 | disc | +0.8 [-0.4, +2.6] (195) | -0.1 [-0.2, +0.0] (453) | +0.0 [-0.5, +0.6] (149) | +0.0 (9) |
+| S | X2 | conf | +0.0 [+0.0, +0.0] (99) | -0.4 [-1.2, +0.0] (209) | +0.0 [+0.0, +0.0] (83) | +0.0 (1) |
+| S | X3 | disc | +0.0 [-0.9, +1.0] (195) | -0.3 [-1.3, +0.7] (453) | -0.7 [-1.9, +0.3] (149) | +0.0 (9) |
+| S | X3 | conf | -1.6 [-3.2, -0.2] (99) | -0.3 [-1.5, +1.0] (209) | -0.1 [-1.1, +1.0] (83) | +0.0 (1) |
+| S | S1 | disc | +9.4 [-2.0, +22.5] (195) | -2.1 [-8.9, +4.9] (453) | -3.8 [-13.8, +7.4] (149) | +0.0 (9) |
+| S | S1 | conf | -9.7 [-25.6, +4.4] (99) | -8.8 [-18.7, +1.5] (209) | -2.2 [-15.3, +12.0] (83) | +0.0 (1) |
+| S | S2 | disc | -8.8 [-18.2, +1.8] (195) | -5.7 [-12.2, +0.6] (453) | -8.4 [-19.1, +3.2] (149) | +0.0 (9) |
+| S | S2 | conf | -10.2 [-22.4, +0.6] (99) | -13.7 [-21.5, -6.2] (209) | -3.9 [-14.8, +8.0] (83) | +0.0 (1) |
+| S | S3 | disc | -3.9 [-8.2, +1.1] (195) | -7.8 [-10.8, -4.9] (453) | -8.8 [-14.0, -3.1] (149) | +0.0 (9) |
+| S | S3 | conf | -15.7 [-21.8, -8.9] (99) | -11.5 [-15.5, -7.4] (209) | -7.7 [-12.8, -2.3] (83) | +0.0 (1) |
+| S | S4 | disc | +0.0 [+0.0, +0.0] (195) | -0.0 [-0.1, +0.0] (453) | -0.1 [-0.1, +0.0] (149) | +0.0 (9) |
+| S | S4 | conf | +0.1 [+0.0, +0.3] (99) | -0.1 [-0.1, +0.0] (209) | -0.1 [-0.2, +0.0] (83) | +0.0 (1) |
+| S | S5 | disc | -5.4 [-14.5, +3.6] (195) | -5.4 [-12.4, +1.9] (453) | -13.3 [-27.3, +0.1] (149) | +0.0 (9) |
+| S | S5 | conf | -9.2 [-24.5, +5.9] (99) | -17.6 [-28.2, -7.7] (209) | -4.4 [-16.5, +11.8] (83) | +0.0 (1) |
+
+v1's best cells by this state (from BM_20261011_001):
+
+| side | v1 cell | state | days | bp/day [95%] |
+|---|---|---|---|---|
+| L | L|rvxmfe|1|10|a50 | TRAP | 306 | -15.1 [-26.1, -4.1] |
+| L | L|rvxmfe|1|10|a50 | KINETIC | 686 | -15.7 [-21.4, -9.6] |
+| L | L|rvxmfe|1|10|a50 | RANGE | 237 | -2.4 [-13.8, +9.4] |
+| L | L|rvxmfe|1|10|a50 | NA | 7 | +0.0 |
+| S | S|rv|1|10|a50 | TRAP | 306 | +3.7 [-6.1, +13.6] |
+| S | S|rv|1|10|a50 | KINETIC | 686 | -1.1 [-7.4, +5.3] |
+| S | S|rv|1|10|a50 | RANGE | 237 | +2.1 [-7.0, +12.6] |
+| S | S|rv|1|10|a50 | NA | 7 | +0.0 |
+
+All 16 selected cells, equal weight (reported, no verdict): discovery -5.1 [-5.8, -4.4] bp/day, Sharpe -7.26; confirmation -6.0 [-6.9, -5.1], Sharpe -9.67; after CAS -5.0.
+
+## Regimes (bp/day of each selected cell between the declared dates; reported only)
+
+| from | to | days | L X1 | L X2 | L X3 | L S1 | L S2 | L S3 | L S4 | L S5 | S X1 | S X2 | S X3 | S S1 | S S2 | S S3 | S S4 | S S5 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 2021-10-01 | 2024-11-19 | 778 | -0.1 | +0.0 | -0.0 | -18.1 | -21.5 | -6.3 | -0.1 | -16.2 | +0.3 | +0.2 | -0.3 | +1.6 | -6.6 | -6.7 | -0.0 | -6.0 |
+| 2024-11-20 | 2025-07-02 | 153 | -1.2 | +0.8 | -0.3 | -17.4 | -14.4 | -5.8 | +0.0 | -19.2 | -0.7 | -0.5 | -1.1 | -13.3 | -13.7 | -14.6 | +0.0 | -27.0 |
+| 2025-07-03 | 2025-08-29 | 40 | -0.7 | +0.0 | -0.8 | -27.4 | -19.9 | -3.1 | +0.0 | -15.9 | -1.2 | +0.0 | -1.0 | +5.8 | -8.0 | -8.8 | -0.1 | -7.2 |
+| 2025-09-01 | 2026-03-30 | 144 | -0.2 | +0.0 | -1.5 | -6.5 | -12.8 | -7.5 | +0.0 | -11.6 | +0.8 | +0.0 | +0.3 | -5.0 | -7.2 | -8.6 | -0.1 | -4.8 |
+| 2026-04-01 | 2026-07-31 | 83 | -1.3 | +0.0 | -0.4 | -11.9 | -15.4 | -4.9 | +0.0 | -15.8 | -0.4 | -0.2 | -0.9 | -16.5 | -14.5 | -14.2 | +0.1 | -8.3 |
+| 2026-08-03 | 2026-09-04 | 25 | +0.0 | +0.0 | -0.7 | -13.5 | -1.9 | -13.3 | +0.0 | +3.3 | +1.8 | +0.0 | +0.0 | -5.7 | -7.6 | -12.2 | +0.0 | -23.1 |
+| 2026-09-07 | 2026-10-09 | 23 | -0.3 | +0.0 | -0.8 | -18.7 | -17.7 | -10.4 | +0.0 | -18.1 | +0.2 | +0.0 | -0.3 | +7.3 | -11.0 | -1.9 | -0.4 | -14.6 |
 
 ## Limits (from the declaration)
 
-- the published evidence for this strategy is from the US (Zarattini, Barbon and Aziz 2024: Sharpe 2.81 with no clean out-of-sample period); no published after-cost NSE result exists
-- slippage is assumed, not measured; the edge sits in the highest-volume opening moves, where impact is largest
-- historical MIS eligibility, short availability, F&O ban lists and price-band halts are not in the data
-- 3-minute coverage was fetched for stocks the D / ENS engines ever ranked in their top 10; liquid stocks never ranked are missing unless fetched (coverage rule)
-- the NIFTY sleeve trades the spot index as a stand-in for futures
-- the closing-auction regime (from 3 Aug 2026) and the revised pre-open (from 7 Sep 2026) change the open and the close; only about two months of data exist for them
-- two data checks look at the whole session (reconciliation with the daily bar; at least 80% of bars present): they remove broken downloads but would also remove a session halted for most of the day; the report counts both
-- sector membership comes from today's index lists: stocks that have left the indices have no sector (the sector gate lets them through) and the peer averages are made of today's members
-- the design drew on earlier studies (Soul, intraday Soul) whose data overlap the confirmation window: the confirmation is clean of BIGMOVE's own results only
-- PROMISING is the best of 42 cells per side and its daily mean has no multiplicity control (the FDR flag is shown beside it; a ranked cell's lead over buying everything does, amendment q); only a forward paper test can confirm it
-- the bootstrap statistics are somewhat optimistic: in the test suite's simulations the 95% interval held the true mean in 93.0% of autocorrelated fat-tailed series and the Reality Check flagged 9.0% of no-edge sets at p < 0.05; read borderline p-values with that in mind
+- LSAP and its critique are untested hypotheses from other AIs; no published NSE evidence exists for these exact rules
+- the spot index stands in for NIFTY futures (no volume, no basis); market participation is a constituent-turnover proxy
+- slippage is assumed, not measured; trap and exhaustion entries happen in fast markets, where real slippage is largest
+- pyramiding needs margin the MIS limits may not allow on every stock; per-peak-exposure figures are shown for that reason
+- sector membership comes from today's index lists (survivorship in the peer sets); historical MIS eligibility, short availability and F&O bans are not in the data
+- the same data was used for v1; the two studies are separate, not independent confirmations of each other
+- PROMISING is the best of a family's 4-8 cells; its daily mean is judged against that search (p (search)) but not against the 16 family-sides together (the FDR flag and the Reality Check are shown beside it); only a forward paper test can confirm it
+- the bootstrap statistics are somewhat optimistic (v1.1's calibration: the 95% interval held the true mean in 93.0% of autocorrelated fat-tailed series; the Reality Check flagged 9.0% of no-edge sets at p < 0.05)
 
-Every cell with all statistics is in cells.csv; daily book returns in daily_returns.parquet; trades of the selected cells in trades_selected.parquet; gates.csv, exits.csv, comparison.csv, nifty_sleeve.csv, thin_days.csv, regimes.csv.
+Every cell with all statistics is in cells.csv; selected.csv, gates.csv, management.csv, h2.csv, h6.csv, states.csv, controls.csv, regimes.csv; daily book returns in daily_returns.parquet; the selected cells' trades in trades_selected.parquet.
