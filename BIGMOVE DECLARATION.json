@@ -1,0 +1,220 @@
+{
+  "family_id": "bigmove_v1",
+  "stage": "exploration with a pre-declared confirmation",
+  "declared": "2026-10-08",
+  "status": "Declared before any BIGMOVE result was seen. Amended the same day, before any real-data run, after a synthetic smoke test showed an uninformative ranking could still earn PROMISING when every active breakout pays: the plain book (every qualifying breakout) is now selectable, and every RANKED book must beat it (the project rule: beat buying everything). Amended again on 9 Oct 2026, still before any real-data run, after the synthetic test suite: (a) a direction gate can only 'add' (H4) to a cell whose discovery mean is above zero, because on a losing cell any filter that trades less looks better; (b) the two whole-session data checks (reconciliation, 80% of bars) are counted and printed in the report; (c) a RANKED cell needs the discovery lower bound of its excess over PLAIN above zero for PROMISING too, not only for CHAMPION - with point estimates alone, a ranking that adds nothing passes by luck about one time in four (each window's excess is above zero half the time), and the synthetic stocks-in-play test hit that case with the blind MFE ranking. Exploration mode (two-speed research, agreed 7 Oct 2026): a broad, aggressive grid, every number with its interval; verdicts are fixed below and the confirmation window is used once. A CHAMPION or PROMISING verdict makes a forward paper lane candidate; real money only after forward confirmation, as for every engine in this project. Second pipeline: reads the daily cache, <root>\\intraday_3m\\, NIFTY 50 bars and optional sector files; writes only <root>\\research2\\bigmove\\. Independent of the frozen D / ENS engines. Amended a third time on 10 Oct 2026, still before any real-data run, after an independent code review: (d) the 'beat buying everything' benchmark is EXPOSURE-MATCHED - a ranked N-slot cell is compared with every candidate holding the same capital (min(count, N)/N of the book, spread equally), because the fully invested PLAIN book let a RANDOM ranking 'beat' it by holding cash on thin days (a random ranking beat PLAIN with its lower bound above zero in 21 of 24 cells in a synthetic trend market, and uninformative rankings reached CHAMPION); (e) an F2 / F3 variant of a ranked cell must also beat the same variant on the matched PLAIN book; (f) a gate that cannot judge a stock-day (no NIFTY bars, no sector or liquid peer, no beta) lets it through and the share it could judge is reported - before, such stock-days were blocked, which credited the sector gate with dropping stocks missing from today's index lists (survivorship); (g) every book uses ONE candidate pool: candidates with a memory score (a stock's first months after listing are in no book; counted in the report); (h) coverage counts liquid stock-days that have a 3-minute session (not files), up to the last day the 3-minute data reaches, and the share still usable after reconciliation and the 80% rule must also reach 90%; (i) rules stated exactly as coded (memory needs at least 10 of its 20 neighbours; beta needs 60 sessions; traded value 20 sessions; the NIFTY volatility median needs at least 120 sessions; the opening range, not only the first bar, must not be frozen); (j) reported in addition: the combined L+S book, a regime table, Reality Check and FDR within F2, F3 and F4, days with fewer than N candidates, a research-ledger entry; an NSE ETF list in <root>\\\\sectors\\\\ is read. Amended a fourth time on 10 Oct 2026, before any real-data run, after the re-review: (k) 'best' per side - the cell the gates, exits, combined book, regimes and ledger use - is the highest discovery Sharpe among cells that meet the discovery half of their own rule (lower bound > 0; a ranked cell's excess lower bound > 0 too), else the highest overall, because raw Sharpe still favours a ranked book that sits in cash on thin losing days; (l) beta needs 55 of its 60 sessions (one missing NIFTY row blanked it for 60 sessions); (m) NIFTY sessions need their first bar and 80% of bars, as stocks do; (n) within F2 and F3 the Reality Check and FDR test the paired improvement over the base cell (H4, H5), not the level; (o) each memory pick is also shown minus the ATR control (is the memory more than volatility?) - reported, not a rule; (p) the books start on the first day any stock can be a candidate (relative volume needs 10 earlier sessions). Amended a fifth time on 10 Oct 2026, before any real-data run, after Karan's review asked for an independent check of selection and multiple testing: (q) a ranked cell's excess over the matched PLAIN book is also judged against the search - its max-t p-value (studentised, with the Reality Check's resamples) over the side's 36 ranked cells must be below 0.025 - for PROMISING, CHAMPION and 'best'; a ranked base's F2 / F3 variants need it too (the base cell's). Why: the cell is picked as the best of many, and its own excess lower bound ignored that. Measured in 20 synthetic markets where buying everything pays and no ranking adds anything (thin counter-trend days, seeds 34-53): before, a ranked pick reached CHAMPION or PROMISING in 7 of the 20; after, in 1. Planted rankings keep their verdicts (stocks in play, seeds 1, 2, 3 and 5; short-only catalysts, seeds 4-7: every 'best' and 'best RV' verdict unchanged; one partial RVxMFE pick with p 0.058 went from PROMISING to WATCH). The check is optimistic in short samples: in those 20 markets 'best' was a ranked cell that passed the discovery half on 4 of 40 sides at a nominal 2.5%, and the confirmation window removed 3 of them. (r) Reported in addition, no rule changed: the share of trades stopped inside their entry bar and of trades with a missing bar inside them; unreadable files and triggered trades without an exit price; the usable share by month (universe_by_month.csv) and by stock; provenance in summary.json (code and declaration hashes, data fingerprint, config, seeds, Python and library versions, warnings) and a hash of every output (outputs.sha256); a run of a declaration that was already run is stamped RERUN in the report, the summary and the ledger and is not fresh evidence; the Reality Check returns n/a, not p = 1/(B+1), when no book in a family differs from its base.",
+  "question": "Can an intraday, flat-by-the-close strategy catch big same-day moves on NSE, long and short, by ranking the stocks that are unusually able to move today (move potential) and letting the opening breakout supply the direction?",
+  "design_principle": "Move potential x directional confirmation x tradability. Move potential ranks stocks (opening relative volume, the stock's own similar-day memory of next-session range, or both); direction comes only from price - the opening range breaks one way - never from the memory (our Soul study: memory predicts move size, Spearman about +0.2, but not direction). Entry at the breakout, exit on time (our tests: entering at the open beat 95 confirmation rules; targets lost to time exits three times).",
+  "hypotheses": {
+    "H1": "Stocks-in-play opening-range breakout (top N by move potential, both sides) earns a positive net return after Indian cash-intraday costs and slippage.",
+    "H2": "RV x MFE (opening relative volume times the memory's expected range) beats RV alone and MFE alone on the same rules.",
+    "H3": "The long book (BIGMOVE-L) and the short book (BIGMOVE-S) differ; each is judged on its own.",
+    "H4": "Directional gates (NIFTY, sector, relative strength vs NIFTY) improve the breakout.",
+    "H5": "Path management (VWAP trailing exit, stop to breakeven after +1R) improves on the time exit.",
+    "H6": "A NIFTY noise-boundary momentum sleeve is profitable after NIFTY futures costs."
+  },
+  "data": {
+    "bars": "3-minute bars from <root>\\intraday_3m\\ (timestamp = bar start, IST, 09:15-15:27, 125 bars); only sessions that pass intraday_cache's reconciliation with the daily cache; a session is usable only if its first bar exists and at least 80% of its bars exist",
+    "daily": "the daily cache (data_quality._paths) from 2015, for liquidity, ATR, state, memory and beta",
+    "nifty": "NIFTY50_daily.parquet (daily) and the NIFTY 50 3-minute file (NIFTY50_3m or 'NIFTY 50_3m'); the index has no volume; a NIFTY session counts when its first bar and 80% of its bars exist (else the NIFTY gates let orders through that day and the sleeve does not trade)",
+    "sectors": "optional: NSE index constituent CSVs (columns Symbol and Industry, e.g. ind_nifty500list.csv from niftyindices.com) saved in <root>\\sectors\\; without them the sector gate is not run and the report says so; an ISIN starting INF marks an ETF",
+    "coverage_rule": "the run refuses to start when fewer than 90% of liquid stock-days in the windows (up to the last day the 3-minute data reaches) have a 3-minute session, unless --allow-partial-universe (missing names are not random: they were never in D's top 10); --coverage-only writes missing_liquid.txt (stocks under 90% covered) and coverage_by_stock.csv; after reconciliation and the 80% rule the usable share must also reach 90%, or the run stops before any book is built"
+  },
+  "windows": {
+    "discovery": "2021-10-01 to 2024-12-31: every cell computed; selection happens here only",
+    "confirmation": "2025-01-01 to 2026-07-31: evaluated once, after selection; pre closing-auction regime",
+    "post_cas": "2026-08-03 onward: closing auction session for F&O stocks (continuous trading ends 15:15); reported separately as a forward-like check, never used for selection",
+    "regime_flags_reported": [
+      "2024-11-20 SEBI F&O changes",
+      "2025-07-03 SEBI expiry-day order",
+      "2025-09-01 Tuesday expiry",
+      "2026-04-01 STT increase on F&O",
+      "2026-08-03 closing auction session",
+      "2026-09-07 revised pre-open"
+    ]
+  },
+  "universe": {
+    "point_in_time": "each day, from data up to the previous close: price at least Rs 50; 20-session median traded value (close x volume, all 20 sessions present) at least Rs 25 crore; ATR(14) known; equity series only (no index, no ETF by the name rule, an INF ISIN or a symbol in an ETF list file in <root>\\\\sectors\\\\, e.g. NSE's eq_etfseclist.csv)",
+    "same_day": "usable 3-minute session; at least 10 of the previous 14 bar sessions known (for relative volume; bars from up to 60 days before the discovery start are read for this history only); opening range not frozen (its high > its low); a memory score exists (one candidate pool for every book; a stock's first months after listing have none)",
+    "short_side": "shorts through intraday MIS, square-off forced by the time exit; historical MIS lists and F&O ban lists are not in the data (limitation, stated in the report)"
+  },
+  "signals": {
+    "opening_range": "the first r bars (r = 1: 09:15-09:18, or r = 2: 09:15-09:21)",
+    "direction": "opening-range close above its open = long candidate (BIGMOVE-L), below = short candidate (BIGMOVE-S), equal = no trade",
+    "relative_volume_RV": "opening-range volume / mean opening-range volume over the previous 14 bar sessions; candidates need RV >= 1.0 (as in the published rule)",
+    "memory_MFE": "move-potential memory: the stock's 20 most similar earlier sessions (state at their close: the 10 daily state measures and the 5-session changes of momentum-20, volatility ratio and volume ratio - the tested own-memory set - each as a percentile of the stock's own history up to that session), at least 5 sessions apart, each earlier than the previous close; score = ATR(14) as of the previous close x the median of their NEXT session's high-low range in ATR units = the expected range today, % of price. At least 10 of the 20 neighbours must exist (younger stocks have no score). Direction-free by construction.",
+    "RVxMFE": "the product of the day's cross-sectional percentile ranks of RV and MFE within the side's candidates",
+    "PLAIN": "no ranking: every qualifying breakout candidate of the side, each 1/(number of candidates that day) of the book - a strategy in its own right. The BENCHMARK a ranked N-slot cell must beat is PLAIN with the same capital in use: every candidate at min(count, N)/(N x count) of the book (on a day with fewer than N candidates both hold all of them at 1/N)",
+    "controls_not_selectable": [
+      "random: top N by a fixed random number",
+      "atr: top N by ATR(14) alone (is the memory more than volatility?)"
+    ]
+  },
+  "rules": {
+    "entry": "stop order at the opening-range high (long) or low (short), live from the bar after the opening range until the bar starting 14:30; fills when a bar reaches the level (a touch triggers): price = max(level, bar open) for longs, min(level, bar open) for shorts, plus slippage",
+    "gates": "a gate is checked at each bar close and arms the order for the next bar only (no information from the fill bar)",
+    "initial_stop": "opening-range opposite end, or 0.25 or 0.50 x ATR(14) from the fill price",
+    "stop_fill": "the stop price, or the bar open when a bar opens through it (gap); if the fill bar also reaches the stop, the trade is stopped in that bar (conservative)",
+    "time_exit": "the open of the bar starting 15:03 (before the 15:10 square-off of closing-auction stocks); a missing bar uses the next open, else the last close",
+    "one_trade": "at most one trade per stock per day; a selected stock that never breaks out earns nothing (its slot stays in cash)"
+  },
+  "families": {
+    "F1_selection_note": "ranked and plain cells together form F1",
+    "F1_selection": {
+      "grid": "score {RV, MFE, RVxMFE} x opening range {1, 2 bars} x top N per side {10, 20} x initial stop {range, 0.25 ATR, 0.50 ATR} = 36 ranked cells per side, plus PLAIN x opening range x stop = 6 per side: 42 per side, 84 trials",
+      "books": "BIGMOVE-L takes the N highest-scoring long candidates each day, BIGMOVE-S the N highest short candidates; each slot holds 1/N of the book's capital (1x gross); the combined book holds both (1/(2N) each)",
+      "excess": "a ranked cell's excess = its daily return minus the exposure-matched PLAIN book with the same side, opening range, N and stop, paired by day; the random and ATR controls get the same comparison (a random ranking must show none)",
+      "selection_rule": "in discovery only, per side: the cell with the highest Sharpe within each score (RV, MFE, RVxMFE, PLAIN), and 'best' overall = the highest Sharpe among cells meeting the discovery half of their rule (lower bound > 0; ranked: excess lower bound > 0 and its max-t p below 0.025 too), else the highest Sharpe; the median cell by Sharpe is reported for every score"
+    },
+    "F2_gates": "on each side's discovery-best F1 cell: NIFTY (its return since the open has the trade's sign), sector (the equal-weight return since the open of the stock's other liquid sector peers has the trade's sign), RS (the stock's return since the open minus beta x NIFTY's has the trade's sign; beta = 60-session daily beta to the previous close, at least 55 sessions), NIFTY + RS; each compared with no gate, paired by day; a gate that cannot judge a stock-day (no NIFTY bars that day, no sector or no other liquid peer, no beta) lets the order through, and the share of picks it could judge is reported; for a ranked cell each gated variant must also beat the same gate on the matched PLAIN book",
+    "F3_exits": "on each side's discovery-best F1 cell: VWAP trail (exit at the next bar open after a bar closes on the wrong side of the session VWAP) and breakeven (after +1R the stop moves to the entry); each compared with the time exit, paired by day; for a ranked cell each exit variant must also beat the same exit on the matched PLAIN book",
+    "F4_nifty_sleeve": {
+      "rules": "noise boundaries from the NIFTY 50 3-minute bars: sigma(bar) = mean over the previous 14 sessions of |close(bar) / open - 1| (at least 10 sessions); upper = max(open, previous close) x (1 + sigma), lower = min(open, previous close) x (1 - sigma); entries checked at the bar closes 10:00, 10:30, ... 14:30 (as the published rule skips the first half hour); a close outside a band enters at the next bar open in its direction; at most one entry a day (cost-aware); band-trail exits checked at the closes 10:30 ... 15:00",
+      "grid": "exit {time 15:03, band trail: exit at a later check whose close is back inside the entry band} x day filter {all, previous day NR4 or NR7, 14-session realised volatility above its 250-session median} = 6 cells",
+      "vehicle": "NIFTY futures, approximated by the spot index (no futures bars); one lot = 65 x index"
+    },
+    "RVxMFE_comparison": "for each side and each of the 12 (opening range, N, stop) combinations: daily RVxMFE minus RV and RVxMFE minus MFE; reported per combination and pooled (the average of the 12 paired series)"
+  },
+  "costs": {
+    "basis": "the current Zerodha and statutory schedule (sources gathered 8 Oct 2026) applied to all history",
+    "cash_intraday": "brokerage min(Rs 20, 0.03%) per order; STT 0.025% sell side; NSE transaction 0.00307% per side; SEBI Rs 10 per crore per side; stamp duty 0.003% buy side; GST 18% on brokerage + transaction + SEBI",
+    "nifty_futures": "brokerage min(Rs 20, 0.03%) per order; STT 0.05% sell side (from 1 Apr 2026); NSE transaction 0.00183% per side; SEBI Rs 10 per crore per side; stamp 0.002% buy side; GST 18% as above",
+    "notional_per_position_rs": 500000,
+    "slippage_base": "stop entry 5 bp, stop exit 5 bp, time / trail exit 3 bp (assumptions, not measured: calibrate live); NIFTY futures 1 index point per side",
+    "stress": "every result also at 1.5x and 2x slippage; a CHAMPION must stay positive at 1.5x"
+  },
+  "statistics": {
+    "intervals": "95% circular block bootstrap over trading days (blocks of 10 days, 2,000 resamples) on the daily book return; per-trade figures are descriptive",
+    "sharpe": "mean / sd of the daily book return (cash days count as 0) x sqrt(250)",
+    "drawdown": "largest fall of the cumulative daily return, % of book capital (not compounded)",
+    "deflated_sharpe": "Bailey and Lopez de Prado DSR with the number of trials of the family (F1: 84) and the variance of the trial Sharpes; threshold 0.95",
+    "reality_check": "White's Reality Check, studentised, with the same resamples for all cells: within F1 per side (each cell vs zero), within F2 and F3 per side (each variant's paired improvement over the base cell) and within F4 (vs zero)",
+    "max_t": "single-step max-t p-value, studentised, with the Reality Check's resamples: a cell's discovery statistic against the best of the cells it was chosen from when none has an edge; for a ranked cell's excess over the matched PLAIN book, over the side's 36 ranked cells (amendment q); the Reality Check's p is the smallest of them",
+    "fdr": "Benjamini-Hochberg q = 0.10 on one-sided bootstrap p-values: F1 per side and F4 on the level, F2 and F3 per side on the paired improvement; shown beside each verdict (PROMISING's daily mean carries no multiplicity control: it is a screen for paper lanes, and the forward paper test is the real gate; a ranked cell's lead over buying everything does, amendment q)",
+    "high_vol_filter_note": "the NIFTY 250-session volatility median needs at least 120 sessions"
+  },
+  "verdicts": {
+    "CHAMPION": "discovery: 95% lower bound of the daily mean > 0, DSR >= 0.95, mean > 0 at 1.5x slippage; confirmation: mean > 0, Sharpe at least half the discovery Sharpe, mean > 0 at 1.5x slippage; a ranked cell also needs its excess over PLAIN to have a discovery lower bound > 0 that survives the search (max-t p below 0.025 over the side's ranked cells, amendment q) and a confirmation mean > 0",
+    "PROMISING": "discovery lower bound > 0 and confirmation mean > 0; a ranked cell also needs its excess over PLAIN to have a discovery lower bound > 0 that survives the search (max-t p below 0.025 over the side's ranked cells, amendment q) and a confirmation mean > 0 (a ranking that merely matches buying everything is not promising)",
+    "WATCH": "discovery mean > 0 or confirmation mean > 0, not both of PROMISING",
+    "DEAD": "otherwise",
+    "applies_to": "the discovery-selected cells (F1 per score and overall, F2 and F3 variants, F4 best cell); every other cell is reported with its numbers but gets no verdict; a ranked cell's F2 / F3 variant needs the excess rule too (its own excess over the same variant on matched PLAIN, and its base cell's max-t p)",
+    "paired": "H2, H4 and H5 hold when the paired discovery lower bound > 0 and the paired confirmation mean > 0; H4 (a gate) also needs the gated cell's base to have a discovery mean > 0"
+  },
+  "limitations_stated_in_report": [
+    "the published evidence for this strategy is from the US (Zarattini, Barbon and Aziz 2024: Sharpe 2.81 with no clean out-of-sample period); no published after-cost NSE result exists",
+    "slippage is assumed, not measured; the edge sits in the highest-volume opening moves, where impact is largest",
+    "historical MIS eligibility, short availability, F&O ban lists and price-band halts are not in the data",
+    "3-minute coverage was fetched for stocks the D / ENS engines ever ranked in their top 10; liquid stocks never ranked are missing unless fetched (coverage rule)",
+    "the NIFTY sleeve trades the spot index as a stand-in for futures",
+    "the closing-auction regime (from 3 Aug 2026) and the revised pre-open (from 7 Sep 2026) change the open and the close; only about two months of data exist for them",
+    "two data checks look at the whole session (reconciliation with the daily bar; at least 80% of bars present): they remove broken downloads but would also remove a session halted for most of the day; the report counts both",
+    "sector membership comes from today's index lists: stocks that have left the indices have no sector (the sector gate lets them through) and the peer averages are made of today's members",
+    "the design drew on earlier studies (Soul, intraday Soul) whose data overlap the confirmation window: the confirmation is clean of BIGMOVE's own results only",
+    "PROMISING is the best of 42 cells per side and its daily mean has no multiplicity control (the FDR flag is shown beside it; a ranked cell's lead over buying everything does, amendment q); only a forward paper test can confirm it",
+    "the bootstrap statistics are somewhat optimistic: in the test suite's simulations the 95% interval held the true mean in 93.0% of autocorrelated fat-tailed series and the Reality Check flagged 9.0% of no-edge sets at p < 0.05; read borderline p-values with that in mind"
+  ],
+  "report": "report.md with verdicts first, cells.csv, selected.csv, daily_returns.parquet, trades_selected.parquet, comparison.csv, gates.csv, exits.csv, nifty_sleeve.csv, thin_days.csv, regimes.csv, coverage.json, summary.json (tool version, declaration fingerprint, coverage, verdicts of every family, combined book, provenance: code and declaration hashes, data fingerprint, config, seeds, library versions, warnings), outputs.sha256 (a hash of every file); universe_by_month.csv and coverage_by_stock.csv beside the runs; a repeat run of this declaration is stamped RERUN; one line appended to <root>\\\\panel\\\\research_ledger.jsonl",
+  "config": {
+    "discovery_start": "2021-10-01",
+    "discovery_end": "2024-12-31",
+    "confirmation_start": "2025-01-01",
+    "confirmation_end": "2026-07-31",
+    "post_cas_start": "2026-08-03",
+    "regime_dates": [
+      "2024-11-20",
+      "2025-07-03",
+      "2025-09-01",
+      "2026-04-01",
+      "2026-08-03",
+      "2026-09-07"
+    ],
+    "bar_min": 3,
+    "session_bars": 125,
+    "min_bar_share": 0.8,
+    "min_price": 50.0,
+    "min_value_cr": 25.0,
+    "value_window": 20,
+    "rv_lookback": 14,
+    "rv_min_sessions": 10,
+    "rv_min": 1.0,
+    "or_bars": [
+      1,
+      2
+    ],
+    "top_n": [
+      10,
+      20
+    ],
+    "stops": [
+      "range",
+      0.25,
+      0.5
+    ],
+    "entry_last_minute": 315,
+    "exit_minute": 348,
+    "memory_k": 20,
+    "memory_apart": 5,
+    "memory_min_history": 60,
+    "beta_window": 60,
+    "nifty_sigma_lookback": 14,
+    "nifty_sigma_min": 10,
+    "nifty_entry_bars_start_minute": [
+      42,
+      72,
+      102,
+      132,
+      162,
+      192,
+      222,
+      252,
+      282,
+      312
+    ],
+    "nifty_exit_bars_start_minute": [
+      72,
+      102,
+      132,
+      162,
+      192,
+      222,
+      252,
+      282,
+      312,
+      342
+    ],
+    "nifty_vol_window": 14,
+    "nifty_vol_median_window": 250,
+    "nifty_lot": 65,
+    "notional_rs": 500000.0,
+    "brokerage_rate": 0.0003,
+    "brokerage_cap_rs": 20.0,
+    "stt_cash_sell": 0.00025,
+    "txn_cash": 3.07e-05,
+    "stamp_cash_buy": 3e-05,
+    "stt_fut_sell": 0.0005,
+    "txn_fut": 1.83e-05,
+    "stamp_fut_buy": 2e-05,
+    "sebi_per_crore_rs": 10.0,
+    "gst": 0.18,
+    "slip_entry_bps": 5.0,
+    "slip_stop_bps": 5.0,
+    "slip_time_bps": 3.0,
+    "slip_nifty_points": 1.0,
+    "stress": [
+      1.0,
+      1.5,
+      2.0
+    ],
+    "boot_B": 2000,
+    "boot_block": 10,
+    "seed": 7,
+    "fdr_q": 0.1,
+    "dsr_min": 0.95,
+    "min_coverage": 0.9,
+    "memory_min_neighbours": 10,
+    "rv_history_days_before_start": 60,
+    "beta_min_sessions": 55,
+    "excess_padj_max": 0.025
+  }
+}
