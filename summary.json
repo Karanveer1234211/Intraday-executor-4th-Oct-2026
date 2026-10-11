@@ -1,38 +1,405 @@
 {
-  "tool": "soul_intraday_study v1.1",
-  "declaration": "1c2ada8d487d68b3",
-  "candidates": "90f221ed218476e8",
+  "tool": "bigmove_study v1.1",
+  "declaration": "1d330078e15751b7",
   "coverage": {
-    "stock_days": 2788582,
-    "stock_days_with_bars": 1405149,
-    "traded_picks": 9930,
-    "D_picks": 4965,
-    "picks_with_bars_T": 6957,
-    "picks_with_bars_S1": 6942,
-    "pool": 26735,
-    "cross_memory_ok": 9888,
-    "own_memory_median_n": 20.0,
-    "own_intraday_median_n": 20.0,
-    "universe_stocks": 1283,
-    "stocks_per_day_median": 1156.0,
-    "stocks_per_day_min": 956,
-    "bar_stocks_per_day_median": 1159.0,
-    "bar_coverage": 0.9397343074324098,
-    "first_bar_day": "2021-10-01",
-    "no_state_row": 0,
-    "no_next_session": 0,
-    "incomplete": 0,
-    "plain_exit_fallback": 0,
-    "intraday_files": 1264,
-    "intraday_days": 1466691,
-    "intraday_days_reconciled": 1405149
+    "liquid_stocks": 1041,
+    "liquid_stock_days": 438100,
+    "covered_stock_days": 435212,
+    "covered_share": 0.993407897740242,
+    "missing_liquid_stocks": 4,
+    "last_bar_day": "2026-10-09",
+    "etf_list": "NO ETF list in <root>\\sectors\\ - only the name rule excludes ETFs (save NSE's eq_etfseclist.csv there)",
+    "nifty": "bars NIFTY 50_3m.parquet",
+    "sectors": "no sector files (sector gate not run)",
+    "previous_runs": [],
+    "usable_stock_days": 426164,
+    "usable_share": 0.972755078749144,
+    "data_hygiene": {
+      "sessions_with_bars": 1072795,
+      "failed_reconciliation": 30838,
+      "no_first_bar_or_under_80pct_bars": 4123,
+      "unreadable_files": 0,
+      "triggered_without_exit_price": 0
+    },
+    "candidates_without_memory": {
+      "1": {
+        "without": 1458,
+        "all": 127489
+      },
+      "2": {
+        "without": 1505,
+        "all": 127399
+      }
+    },
+    "usable_share_by_month": {
+      "min": 0.5421506182090671,
+      "min_month": "2026-10",
+      "months_under_90pct": [
+        "2025-02",
+        "2026-08",
+        "2026-09",
+        "2026-10"
+      ]
+    },
+    "bar_period": "2021-10-01 to 2026-10-09; books from 2021-10-18"
   },
-  "shadow_candidates": [
-    "T3ATR|O6",
-    "SH",
-    "OH",
-    "OPEN_6",
-    "CLOSE_7",
-    "CLOSE_10"
-  ]
+  "windows": {
+    "disc": 796,
+    "conf": 392,
+    "post": 48
+  },
+  "reality_check": {
+    "F1 L": 1.0,
+    "F1 S": 0.45177411294352826,
+    "F2 L": 0.2493753123438281,
+    "F3 L": 0.0004997501249375312,
+    "F2 S": 0.2493753123438281,
+    "F3 S": 0.35782108945527236,
+    "F4": 0.47176411794102946
+  },
+  "verdicts": [
+    {
+      "side": "L",
+      "pick": "best",
+      "score": "rvxmfe",
+      "or_bars": 1,
+      "top_n": 10,
+      "stop": "a50",
+      "verdict": "DEAD",
+      "excess_p_search": 0.9870064967516242
+    },
+    {
+      "side": "L",
+      "pick": "best rv",
+      "score": "rv",
+      "or_bars": 1,
+      "top_n": 10,
+      "stop": "range",
+      "verdict": "DEAD",
+      "excess_p_search": 1.0
+    },
+    {
+      "side": "L",
+      "pick": "median rv",
+      "score": "rv",
+      "or_bars": 2,
+      "top_n": 10,
+      "stop": "a50",
+      "verdict": "(reported)",
+      "excess_p_search": 1.0
+    },
+    {
+      "side": "L",
+      "pick": "best mfe",
+      "score": "mfe",
+      "or_bars": 1,
+      "top_n": 10,
+      "stop": "a50",
+      "verdict": "DEAD",
+      "excess_p_search": 1.0
+    },
+    {
+      "side": "L",
+      "pick": "median mfe",
+      "score": "mfe",
+      "or_bars": 2,
+      "top_n": 20,
+      "stop": "range",
+      "verdict": "(reported)",
+      "excess_p_search": 1.0
+    },
+    {
+      "side": "L",
+      "pick": "best rvxmfe",
+      "score": "rvxmfe",
+      "or_bars": 1,
+      "top_n": 10,
+      "stop": "a50",
+      "verdict": "DEAD",
+      "excess_p_search": 0.9870064967516242
+    },
+    {
+      "side": "L",
+      "pick": "median rvxmfe",
+      "score": "rvxmfe",
+      "or_bars": 2,
+      "top_n": 10,
+      "stop": "a50",
+      "verdict": "(reported)",
+      "excess_p_search": 1.0
+    },
+    {
+      "side": "L",
+      "pick": "best plain",
+      "score": "plain",
+      "or_bars": 1,
+      "top_n": 0,
+      "stop": "range",
+      "verdict": "DEAD",
+      "excess_p_search": null
+    },
+    {
+      "side": "L",
+      "pick": "median plain",
+      "score": "plain",
+      "or_bars": 2,
+      "top_n": 0,
+      "stop": "a50",
+      "verdict": "(reported)",
+      "excess_p_search": null
+    },
+    {
+      "side": "S",
+      "pick": "best",
+      "score": "rv",
+      "or_bars": 1,
+      "top_n": 10,
+      "stop": "a50",
+      "verdict": "WATCH",
+      "excess_p_search": 0.08995502248875563
+    },
+    {
+      "side": "S",
+      "pick": "best rv",
+      "score": "rv",
+      "or_bars": 1,
+      "top_n": 10,
+      "stop": "a50",
+      "verdict": "WATCH",
+      "excess_p_search": 0.08995502248875563
+    },
+    {
+      "side": "S",
+      "pick": "median rv",
+      "score": "rv",
+      "or_bars": 1,
+      "top_n": 20,
+      "stop": "a50",
+      "verdict": "(reported)",
+      "excess_p_search": 0.591704147926037
+    },
+    {
+      "side": "S",
+      "pick": "best mfe",
+      "score": "mfe",
+      "or_bars": 2,
+      "top_n": 10,
+      "stop": "range",
+      "verdict": "WATCH",
+      "excess_p_search": 0.8715642178910544
+    },
+    {
+      "side": "S",
+      "pick": "median mfe",
+      "score": "mfe",
+      "or_bars": 1,
+      "top_n": 20,
+      "stop": "range",
+      "verdict": "(reported)",
+      "excess_p_search": 0.9250374812593704
+    },
+    {
+      "side": "S",
+      "pick": "best rvxmfe",
+      "score": "rvxmfe",
+      "or_bars": 1,
+      "top_n": 10,
+      "stop": "a50",
+      "verdict": "WATCH",
+      "excess_p_search": 0.2028985507246377
+    },
+    {
+      "side": "S",
+      "pick": "median rvxmfe",
+      "score": "rvxmfe",
+      "or_bars": 1,
+      "top_n": 20,
+      "stop": "range",
+      "verdict": "(reported)",
+      "excess_p_search": 0.16391804097951024
+    },
+    {
+      "side": "S",
+      "pick": "best plain",
+      "score": "plain",
+      "or_bars": 2,
+      "top_n": 0,
+      "stop": "range",
+      "verdict": "DEAD",
+      "excess_p_search": null
+    },
+    {
+      "side": "S",
+      "pick": "median plain",
+      "score": "plain",
+      "or_bars": 1,
+      "top_n": 0,
+      "stop": "range",
+      "verdict": "(reported)",
+      "excess_p_search": null
+    }
+  ],
+  "variant_verdicts": [
+    {
+      "side": "L",
+      "family": "F2",
+      "variant": "g_nifty",
+      "on_cell": "rvxmfe|1|10|a50",
+      "verdict": "DEAD",
+      "adds": false
+    },
+    {
+      "side": "L",
+      "family": "F2",
+      "variant": "g_sector",
+      "on_cell": "rvxmfe|1|10|a50",
+      "verdict": "NOT RUN (no data for this gate)",
+      "adds": false
+    },
+    {
+      "side": "L",
+      "family": "F2",
+      "variant": "g_rs",
+      "on_cell": "rvxmfe|1|10|a50",
+      "verdict": "DEAD",
+      "adds": false
+    },
+    {
+      "side": "L",
+      "family": "F2",
+      "variant": "g_nifty_rs",
+      "on_cell": "rvxmfe|1|10|a50",
+      "verdict": "DEAD",
+      "adds": false
+    },
+    {
+      "side": "L",
+      "family": "F3",
+      "variant": "x_vwap",
+      "on_cell": "rvxmfe|1|10|a50",
+      "verdict": "DEAD",
+      "adds": true
+    },
+    {
+      "side": "L",
+      "family": "F3",
+      "variant": "x_be",
+      "on_cell": "rvxmfe|1|10|a50",
+      "verdict": "DEAD",
+      "adds": true
+    },
+    {
+      "side": "S",
+      "family": "F2",
+      "variant": "g_nifty",
+      "on_cell": "rv|1|10|a50",
+      "verdict": "DEAD",
+      "adds": false
+    },
+    {
+      "side": "S",
+      "family": "F2",
+      "variant": "g_sector",
+      "on_cell": "rv|1|10|a50",
+      "verdict": "NOT RUN (no data for this gate)",
+      "adds": false
+    },
+    {
+      "side": "S",
+      "family": "F2",
+      "variant": "g_rs",
+      "on_cell": "rv|1|10|a50",
+      "verdict": "WATCH",
+      "adds": false
+    },
+    {
+      "side": "S",
+      "family": "F2",
+      "variant": "g_nifty_rs",
+      "on_cell": "rv|1|10|a50",
+      "verdict": "DEAD",
+      "adds": false
+    },
+    {
+      "side": "S",
+      "family": "F3",
+      "variant": "x_vwap",
+      "on_cell": "rv|1|10|a50",
+      "verdict": "DEAD",
+      "adds": false
+    },
+    {
+      "side": "S",
+      "family": "F3",
+      "variant": "x_be",
+      "on_cell": "rv|1|10|a50",
+      "verdict": "WATCH",
+      "adds": false
+    }
+  ],
+  "sleeve_verdict": [
+    {
+      "cell": "time|nr47",
+      "verdict": "WATCH"
+    }
+  ],
+  "combined_book": {
+    "cells": {
+      "L": "rvxmfe|1|10|a50",
+      "S": "rv|1|10|a50"
+    },
+    "disc_mean_bp": -4.812087375968529,
+    "disc_lo_bp": -8.348871896683825,
+    "disc_hi_bp": -1.0248148654246763,
+    "disc_sharpe": -1.357994495266785,
+    "conf_mean_bp": -7.4161396372728206,
+    "conf_lo_bp": -11.705009118337598,
+    "conf_hi_bp": -3.0214214543640248,
+    "conf_sharpe": -2.3757180769760913,
+    "post_mean_bp": -16.709670480206423,
+    "post_lo_bp": -26.325677107281088,
+    "post_hi_bp": -6.313633332481242,
+    "post_sharpe": -5.3108815254240085
+  },
+  "cost_bps_round_trip": 4.49212,
+  "provenance": {
+    "tool": "bigmove_study v1.1",
+    "declaration": "1d330078e15751b7",
+    "code_sha256_16": {
+      "bigmove_study.py": "711ab57c3b776a2f",
+      "soul_intraday_study.py": "73c4a993a1ab9db7",
+      "data_quality.py": "eaac925ad6c04d8c",
+      "intraday_cache.py": "7c3f78559fd9146a"
+    },
+    "python": "3.13.12",
+    "numpy": "2.4.1",
+    "pandas": "2.3.3",
+    "pyarrow": "21.0.0",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "seed": 7,
+    "boot_B": 2000,
+    "boot_block": 10,
+    "data_fingerprint": "8dca77ee97fbffc7",
+    "candidate_rows": {
+      "1": 126031,
+      "2": 125894
+    },
+    "warnings": [
+      "RuntimeWarning: divide by zero encountered in log (arraylike.py:399)"
+    ],
+    "outputs_sha256_16": {
+      "cells.csv": "4b91ae79dea22567",
+      "comparison.csv": "71dadf865c53ba4c",
+      "coverage.json": "e4cdbf01d723b2b9",
+      "daily_returns.parquet": "10b1495b08cc2dd3",
+      "exits.csv": "8fb403986b4cc632",
+      "gates.csv": "7706db8415dc7a13",
+      "nifty_sleeve.csv": "c56a85efa8d538c7",
+      "regimes.csv": "cb52c5a97823432b",
+      "report.md": "5b59e66116f53d33",
+      "selected.csv": "6082be1996d892d9",
+      "thin_days.csv": "2d7bc04e0eb09393",
+      "trades_selected.parquet": "6eb44cf7797e0492"
+    }
+  }
 }
