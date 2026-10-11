@@ -1,0 +1,127 @@
+{
+  "family_id": "stage0_persistence",
+  "stage": "Stage 0 of the 10-stock behavioural engine: is there persistent stock-specific intraday behaviour at all?",
+  "declared": "2026-10-11",
+  "status": "Declared before any real-data run. No change after results are seen. A second run of this declaration is stamped RERUN and is not fresh evidence.",
+  "question": "For simple same-day setups, do the stocks that did best in H1 (relative to their own plain open-to-close trade) also do best in H2, more than chance allows after correcting for 20 setup-sides, AND do the H1 top-decile stocks make money after costs in H2?",
+  "not_retested": "BIGMOVE v1.1 (opening-range breakouts with rankings and gates) and BIGMOVE v2 (trap reversal, breakout retest, late coil, exhaustion fade, 10:30 RS leader; NIFTY trap / pullback / coil) are dead and are not retested as pooled strategies. Stage 0 asks a different question: whether per-stock results PERSIST. Plain opening-range, gap, VWAP, first-hour, compression and previous-day-level setups are used only as probes of that.",
+  "data": {
+    "bars": "<SYMBOL>_3m.parquet in intraday_cache.store(root) (bar start, IST, 09:15-15:27, 125 bars); only sessions that pass intraday_cache v1.7 reconcile_symbol against the daily cache; a session is usable when its first bar exists and at least 80% of its bars exist (bigmove_study v1.1 usable_sessions)",
+    "daily": "the daily cache (data_quality._paths) for liquidity, ATR(14) and the previous day's high, low and close (bigmove_study v1.1 daily_features)",
+    "cutoff": "nothing after 2024-12-31 is used: daily rows and 3-minute bars after the H2 end are dropped right after reading, before any feature, reconciliation or count"
+  },
+  "universe": {
+    "point_in_time": "bigmove_study v1.1 liquid_ok: at the previous close, price at least Rs 50, 20-session median traded value at least Rs 25 crore, ATR(14) known; equity series only (no index, no ETF by name rule, INF ISIN or ETF list file in <root>\\sectors\\)",
+    "same_day": "usable 3-minute session; a previous daily row exists; ATR(14) at the previous close > 0",
+    "basis_guard": "a stock-day whose open is more than 20% from the previous daily close is dropped (a split-basis mismatch between files, not a tradeable gap)",
+    "size": "all liquid stocks with usable sessions (about 1,000), not a preselected 10"
+  },
+  "periods": {
+    "H1": "2021-10-01 to 2023-05-31",
+    "H2": "2023-06-01 to 2024-12-31",
+    "untouched": "2025-01-01 onward is not read into any number"
+  },
+  "trade_rules": {
+    "entry": "a setup's signal is complete at the CLOSE of its signal bar k; entry at the open of the next bar that exists (k+1, or later if bars are missing), no later than the 14:30 bar; else no trade",
+    "exit": "one plain time exit: the open of the 15:03 bar (if missing, the next open that exists, else the last close before it) - bigmove_study v1.1 time_exit_price. No stops, no targets",
+    "frequency": "at most one trade per stock, day and setup-side (the first signal)",
+    "long_short": "every setup has a long side and a short side, judged separately (20 setup-sides)",
+    "costs": "Zerodha cash intraday (MIS) 4.49 bp a round trip at Rs 5 lakh (bigmove_study v1.1 cash_cost_bps), plus slippage 5 bp at entry and 3 bp at the time exit = 12.49 bp per trade. (Stop slippage 5 bp is not used: Stage 0 has no stops.)",
+    "plain_trade": "the same-direction plain trade on every usable liquid stock-day: buy (long) or sell short (short) at the session's first open, exit at the same 15:03 time exit, the same 12.49 bp costs"
+  },
+  "bars_note": "bar k starts at 09:15 + 3k minutes and closes 3 minutes later. ATR below is ATR(14) at the previous close as a fraction of price; PDH / PDL / PDC are the previous day's high / low / close from the daily cache; O0 is the session's first open; C_k the close of bar k; the opening range is bars 0-4 (09:15-09:30).",
+  "setups": {
+    "ORC": {"name": "opening-range continuation", "long": "first bar k in 5..104 that closes above the 09:15-09:30 high", "short": "first bar k in 5..104 that closes below the 09:15-09:30 low"},
+    "ORF": {"name": "opening-range failure", "long": "after the first close below the opening-range low (bar 5..103), the first later close back above it (up to bar 104)", "short": "after the first close above the opening-range high, the first later close back below it"},
+    "GAPC": {"name": "gap continuation", "long": "gap = O0 / PDC - 1 at least +0.2 ATR and C_4 > O0 (the first 15 minutes hold the gap): signal bar 4, entry 09:30", "short": "gap at most -0.2 ATR and C_4 < O0"},
+    "GAPF": {"name": "gap fade", "long": "gap at most -0.2 ATR and C_4 > O0 (the gap down is being bought): signal bar 4, entry 09:30", "short": "gap at least +0.2 ATR and C_4 < O0"},
+    "VWR": {"name": "VWAP-stretch reversion", "long": "first bar k in 10..100 whose close is at least 0.4 ATR below the session VWAP (C_k / VWAP_k - 1 <= -0.4 ATR)", "short": "first bar k in 10..100 whose close is at least 0.4 ATR above VWAP"},
+    "FHM": {"name": "first-hour momentum to the close", "long": "C_19 / O0 - 1 at least +0.25 ATR at 10:15: signal bar 19, entry 10:15", "short": "C_19 / O0 - 1 at most -0.25 ATR"},
+    "CMP": {"name": "compression then break", "long": "the 10:15-11:15 box (bars 20-39, at least 16 of 20 bars present) is narrow - its range (box high - box low) / PDC is at or below the 30th percentile of the stock's own box ranges over its previous 60 usable sessions (at least 40 present; today never counts) - then the first bar k in 40..104 that closes above the box high", "short": "the same narrow box, then the first close below the box low"},
+    "PDB": {"name": "previous-day level break", "long": "O0 below PDH, then the first bar k in 0..104 that closes above PDH", "short": "O0 above PDL, then the first close below PDL"},
+    "PDR": {"name": "previous-day level rejection", "long": "after the first close below PDL (bar 0..103), the first later close back above PDL (up to bar 104)", "short": "after the first close above PDH, the first later close back below PDH"},
+    "VSF": {"name": "volume-spike follow-through", "long": "first bar k in 5..100 with volume at least 3x the mean volume of the same bar slot over the stock's previous 20 usable sessions (at least 10 present) and C_k > open of bar k", "short": "the same spike with C_k < open of bar k"}
+  },
+  "measure": {
+    "per_stock": "for each stock, setup-side and half: mean net return per trade (bp) minus the mean net return of the same-direction plain trade over all the stock's usable liquid days in that half (the 'excess'). The costs are the same per trade, so they cancel in the excess; they do not cancel in the pass rule's H2 test",
+    "why_excess": "subtracting the stock's own plain trade removes its open-to-close drift in that half, so a stock that simply trended all period does not look like it has a setup-specific behaviour",
+    "min_trades": "a stock enters a setup-side's persistence test only with at least 30 trades in H1 AND at least 30 in H2"
+  },
+  "persistence_test": {
+    "statistic": "Spearman rank correlation (average ranks for ties) across stocks between H1 excess and H2 excess, per setup-side",
+    "null": "permutation: the H2 values are shuffled across stocks (stock labels broken) 10,000 times; one-sided p = (1 + number of shuffles with rho >= observed) / (1 + 10,000)",
+    "min_stocks": "a setup-side with fewer than 30 eligible stocks is not testable and gets p = 1",
+    "multiplicity": "Holm correction over all 20 declared setup-sides (untestable ones count), family-wise alpha 0.05"
+  },
+  "pass_rule": {
+    "rule": "PASS if at least one setup-side has Holm-adjusted p <= 0.05 AND, for that same setup-side, the H1 top-decile stocks are positive after costs in H2: the 95% block-bootstrap interval of their H2 net return is above zero",
+    "top_decile": "among stocks with at least 30 H1 trades in that setup-side, the top 10% by H1 excess (rounded up; ties by symbol); ALL their H2 trades in that setup-side count (H2 trade counts are not used to choose them)",
+    "h2_series": "one value per H2 day with at least one such trade: the mean net return (after the 12.49 bp) of that day's trades; circular block bootstrap over those days, blocks of 10, 2,000 resamples, seed 7; at least 20 days needed, else the leg fails",
+    "otherwise": "report 'no persistent stock-specific behaviour' and stop"
+  },
+  "shortlist": {
+    "when": "only if the run PASSES, only for the setup-sides that pass both legs",
+    "rule": "stocks with at least 30 trades in each half, ranked by excess over the whole of 2021-10-01 to 2024-12-31 (all their trades pooled, minus their plain trade over the same days); the top 20 per setup-side are listed as candidates for the 10. Nothing from 2025 onward is used"
+  },
+  "reported_not_rules": [
+    "per setup-side and half, all stocks pooled: trades, win rate, net bp per trade",
+    "the plain open-to-15:03 long trade's own persistence: Spearman of each stock's H1 vs H2 plain net (how much intraday drift persists by itself)",
+    "per setup-side, Spearman of H1 excess with the stock's mean H1 ATR: a high value means the persistence may be mostly volatility (a market-wide effect that is bigger in bp on volatile stocks), not a stock personality",
+    "usable share of liquid stock-days in H1 and H2 after reconciliation and the 80% rule"
+  ],
+  "limitations_stated_in_report": [
+    "In-sample screen only: H1 and H2 are both inside 2021-10 to 2024-12; a PASS earns a Stage 1 build, not money. 2025 onward stays untouched for later confirmation",
+    "A setup that enters later in the day keeps a small part of the stock's drift in its excess (it skips the morning part of the plain trade); with about 60 trades per stock per half this is small next to the noise, and the H2 leg judges net money, not the excess",
+    "Costs are assumed (slippage not measured); the time exit is fixed at 15:03 for every setup",
+    "One permutation per setup-side; the shuffles are not shared across setup-sides, so the Holm correction does not use their correlation (conservative)"
+  ],
+  "outputs": "writes only <root>\\research2\\stage0\\S0_<date>_<n>\\ (report.md, summary.json, persistence.csv, per_stock.csv, pooled.csv, shortlist.csv when it passes, outputs.sha256) and appends one line to <root>\\panel\\research_ledger.jsonl",
+  "config": {
+    "h1_start": "2021-10-01",
+    "h1_end": "2023-05-31",
+    "h2_start": "2023-06-01",
+    "h2_end": "2024-12-31",
+    "bar_min": 3,
+    "session_bars": 125,
+    "min_bar_share": 0.8,
+    "min_price": 50.0,
+    "min_value_cr": 25.0,
+    "entry_last_minute": 315,
+    "exit_minute": 348,
+    "max_abs_gap": 0.2,
+    "notional_rs": 500000.0,
+    "cost_bps_expected": 4.49,
+    "slip_entry_bps": 5.0,
+    "slip_time_bps": 3.0,
+    "or_bars": 5,
+    "signal_last_bar": 104,
+    "gap_atr": 0.2,
+    "gap_signal_bar": 4,
+    "vwap_atr": 0.4,
+    "vwap_first_bar": 10,
+    "vwap_last_bar": 100,
+    "fhm_atr": 0.25,
+    "fhm_signal_bar": 19,
+    "box_first_bar": 20,
+    "box_last_bar": 39,
+    "box_min_bars": 16,
+    "box_pct": 0.3,
+    "box_history": 60,
+    "box_min_history": 40,
+    "vsf_mult": 3.0,
+    "vsf_history": 20,
+    "vsf_min_history": 10,
+    "vsf_first_bar": 5,
+    "vsf_last_bar": 100,
+    "min_trades_per_half": 30,
+    "min_stocks": 30,
+    "permutations": 10000,
+    "alpha": 0.05,
+    "top_share": 0.1,
+    "boot_B": 2000,
+    "boot_block": 10,
+    "boot_min_days": 20,
+    "seed": 7,
+    "shortlist_n": 20
+  }
+}
